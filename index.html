@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Options Lab Ultimate</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050510; --s1: #0c0c1a; --s2: #11112a; --s3: #161635; --s4: #1c1c40;
+  --border: #1c1c40; --border2: #25254d;
+  --red: #ff3d3d; --green: #00e676; --cyan: #00e5ff; --yellow: #ffcc00;
+  --orange: #ff7c00; --purple: #b15fff; --pink: #ff4fcd;
+  --text: #e0e0f0; --muted: #4a4a6a; --muted2: #6a6a8a;
+  --mono: 'IBM Plex Mono', monospace; --display: 'Bebas Neue', sans-serif; --body: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--body); min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(177,95,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 100% 60%, rgba(0,229,255,0.05) 0%, transparent 50%);
+}
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: rgba(5,5,16,0.95);
+  border-bottom: 1px solid var(--border); backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo {
+  font-family: var(--display); font-size: 22px; letter-spacing: 2px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan), var(--pink));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.api-status { font-family: var(--mono); font-size: 10px; display: flex; align-items: center; gap: 6px; color: var(--muted2); }
+.api-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); }
+.api-dot.ok { background: var(--green); animation: pulse 2s infinite; }
+.api-dot.fail { background: var(--red); }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,230,118,0.4); } 50% { box-shadow: 0 0 0 5px rgba(0,230,118,0); } }
+.asset-picker { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--s1); }
+.search-box {
+  display: flex; gap: 6px; margin-bottom: 10px;
+}
+.search-box input {
+  flex: 1; background: var(--s3); border: 1px solid var(--border2); color: var(--text);
+  font-family: var(--mono); font-size: 13px; padding: 9px 12px; border-radius: 8px;
+  outline: none; text-transform: uppercase;
+}
+.search-box input:focus { border-color: var(--cyan); }
+.search-box button {
+  padding: 9px 16px; background: var(--cyan); color: var(--bg); border: none;
+  border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;
+}
+.picker-label { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--muted2); margin-bottom: 8px; }
+.category-row { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
+.category-row::-webkit-scrollbar { display: none; }
+.cat-btn {
+  flex-shrink: 0; padding: 7px 14px; border: 1px solid var(--border2);
+  background: var(--s2); color: var(--muted2); font-size: 12px; font-weight: 600;
+  cursor: pointer; border-radius: 18px; white-space: nowrap;
+}
+.cat-btn.active { background: var(--purple); border-color: var(--purple); color: white; }
+.asset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+.asset-card {
+  background: var(--s2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; cursor: pointer; position: relative; overflow: hidden;
+}
+.asset-card.selected { border-color: var(--cyan); background: rgba(0,229,255,0.04); }
+.asset-card.selected::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--cyan); }
+.asset-name { font-size: 12px; font-weight: 700; }
+.asset-ticker { font-family: var(--mono); font-size: 9px; color: var(--muted2); margin: 2px 0 4px; }
+.asset-price { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--cyan); }
+.asset-change { font-family: var(--mono); font-size: 10px; margin-top: 2px; }
+.asset-change.up { color: var(--green); }
+.asset-change.down { color: var(--red); }
+.selected-asset { padding: 16px 20px; background: linear-gradient(135deg, var(--s2), var(--s1)); border-bottom: 1px solid var(--border); }
+.sel-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.sel-name { font-family: var(--display); font-size: 24px; letter-spacing: 1.5px; line-height: 1; }
+.sel-ticker { font-family: var(--mono); font-size: 10px; color: var(--muted2); letter-spacing: 1.5px; margin-top: 4px; }
+.sel-price { font-family: var(--display); font-size: 30px; letter-spacing: 1px; color: var(--cyan); }
+.sel-change { font-family: var(--mono); font-size: 11px; text-align: right; }
+.sel-change.up { color: var(--green); }
+.sel-change.down { color: var(--red); }
+.sel-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.meta-item { background: var(--s3); border: 1px solid var(--border); border-radius: 6px; padding: 7px 6px; text-align: center; }
+.meta-label { font-family: var(--mono); font-size: 8px; letter-spacing: 1px; color: var(--muted2); }
+.meta-val { font-family: var(--mono); font-size: 11px; font-weight: 700; margin-top: 3px; }
+.tab-bar { display: flex; overflow-x: auto; gap: 2px; padding: 12px 20px 0; border-bottom: 1px solid var(--border); scrollbar-width: none; background: var(--bg); }
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn { flex-shrink: 0; padding: 10px 14px; border: none; background: transparent; color: var(--muted2); font-size: 12px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--purple); }
+.panel { display: none; padding: 20px; }
+.panel.active { display: block; }
+.card { background: var(--s2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.card-head { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--muted2); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.market-view-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.mv-btn { padding: 12px 8px; background: var(--s3); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; text-align: center; }
+.mv-btn.active.bull { border-color: var(--green); background: rgba(0,230,118,0.08); }
+.mv-btn.active.bear { border-color: var(--red); background: rgba(255,61,61,0.08); }
+.mv-btn.active.neutral { border-color: var(--yellow); background: rgba(255,204,0,0.08); }
+.mv-emoji { font-size: 18px; margin-bottom: 3px; display: block; }
+.mv-label { font-size: 11px; font-weight: 700; }
+.strategy-card { background: var(--s2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; position: relative; overflow: hidden; }
+.strategy-card.recommended { border-color: rgba(0,230,118,0.4); background: linear-gradient(135deg, rgba(0,230,118,0.04), var(--s2)); }
+.strategy-card.recommended::before { content: '★ EMPFOHLEN'; position: absolute; top: 10px; right: 10px; font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--green); background: rgba(0,230,118,0.1); padding: 3px 8px; border-radius: 10px; }
+.strat-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.strat-emoji { font-size: 24px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--s3); border-radius: 10px; flex-shrink: 0; }
+.strat-info { flex: 1; }
+.strat-name { font-size: 14px; font-weight: 700; }
+.strat-desc { font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.score-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; font-weight: 700; flex-shrink: 0; border: 2px solid; }
+.sc-high { color: var(--green); border-color: var(--green); background: rgba(0,230,118,0.05); }
+.sc-mid { color: var(--yellow); border-color: var(--yellow); background: rgba(255,204,0,0.05); }
+.sc-low { color: var(--red); border-color: var(--red); background: rgba(255,61,61,0.05); }
+.strat-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.stat-box { background: var(--s3); border: 1px solid var(--border); border-radius: 6px; padding: 7px 6px; text-align: center; }
+.stat-label { font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 1px; margin-bottom: 2px; }
+.stat-val { font-family: var(--mono); font-size: 11px; font-weight: 700; }
+.stat-val.pos { color: var(--green); }
+.stat-val.neg { color: var(--red); }
+.stat-val.neu { color: var(--cyan); }
+.strat-explain { font-size: 12px; color: var(--muted2); line-height: 1.6; padding: 10px; background: var(--s3); border-radius: 6px; }
+.slider-row { margin-bottom: 14px; }
+.slider-top { display: flex; justify-content: space-between; margin-bottom: 7px; }
+.slider-name { font-size: 13px; font-weight: 500; }
+.slider-val { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--cyan); }
+input[type=range] { width: 100%; -webkit-appearance: none; height: 3px; background: var(--border2); border-radius: 2px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--cyan); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px rgba(0,229,255,0.5); }
+.num-input { width: 100%; background: var(--s3); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 16px; padding: 10px 14px; border-radius: 8px; outline: none; }
+.num-input:focus { border-color: var(--cyan); }
+.input-label { font-size: 12px; font-weight: 500; color: var(--muted2); margin-bottom: 6px; display: block; }
+.profile-result { background: linear-gradient(135deg, var(--s2), var(--s3)); border: 2px solid; border-radius: 14px; padding: 16px; margin-bottom: 14px; text-align: center; }
+.profile-result.conservative { border-color: var(--green); }
+.profile-result.moderate { border-color: var(--yellow); }
+.profile-result.aggressive { border-color: var(--red); }
+.profile-emoji { font-size: 36px; margin-bottom: 6px; }
+.profile-title { font-family: var(--display); font-size: 22px; letter-spacing: 1px; }
+.profile-text { font-size: 13px; color: var(--muted2); line-height: 1.6; margin-top: 8px; }
+.quiz-q { background: var(--s3); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+.quiz-question { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.quiz-options { display: flex; flex-direction: column; gap: 6px; }
+.quiz-opt { padding: 10px 12px; background: var(--s2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; }
+.quiz-opt.selected { border-color: var(--cyan); background: rgba(0,229,255,0.08); color: var(--cyan); }
+.kelly-bar-wrap { display: flex; height: 32px; border-radius: 6px; overflow: hidden; margin: 8px 0; border: 1px solid var(--border2); background: var(--s4); }
+.kelly-bar { display: flex; align-items: center; padding-left: 10px; font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--bg); transition: width 0.5s; min-width: 60px; }
+.drawdown-row { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--s3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+.dd-step { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 24px; }
+.dd-bar { flex: 1; height: 6px; background: var(--s4); border-radius: 3px; overflow: hidden; }
+.dd-fill { height: 100%; background: var(--red); transition: width 0.5s; }
+.dd-val { font-family: var(--mono); font-size: 11px; font-weight: 700; width: 70px; text-align: right; }
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.result-box { background: var(--s3); border: 1px solid var(--border); border-radius: 8px; padding: 11px 10px; text-align: center; }
+.result-box.big { grid-column: span 2; }
+.r-label { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 1.5px; margin-bottom: 5px; }
+.r-val { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+.r-val.pos { color: var(--green); }
+.r-val.neg { color: var(--red); }
+.r-val.neu { color: var(--cyan); }
+.r-val.warn-c { color: var(--yellow); }
+.gauge-wrap { text-align: center; padding: 14px; background: var(--s3); border-radius: 10px; margin-bottom: 12px; }
+.gauge { position: relative; width: 220px; height: 130px; margin: 0 auto; }
+.gauge svg { width: 100%; height: 100%; }
+.gauge-val { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-family: var(--display); font-size: 32px; letter-spacing: 1px; }
+.gauge-label { font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-top: 4px; letter-spacing: 1.5px; }
+.warn { background: rgba(255,204,0,0.04); border: 1px solid rgba(255,204,0,0.2); border-left: 3px solid var(--yellow); border-radius: 0 8px 8px 0; padding: 12px 14px; margin-bottom: 12px; font-size: 12px; color: rgba(255,204,0,0.9); line-height: 1.6; font-family: var(--mono); }
+.danger { background: rgba(255,61,61,0.04); border: 1px solid rgba(255,61,61,0.2); border-left: 3px solid var(--red); border-radius: 0 8px 8px 0; padding: 12px 14px; margin-bottom: 12px; font-size: 12px; color: rgba(255,100,100,0.9); line-height: 1.6; }
+.explain { background: linear-gradient(135deg, rgba(0,229,255,0.04), rgba(0,229,255,0.01)); border: 1px solid rgba(0,229,255,0.15); border-left: 3px solid var(--cyan); border-radius: 0 8px 8px 0; padding: 14px; margin-bottom: 12px; }
+.explain-title { font-size: 12px; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
+.explain p { font-size: 13px; color: var(--muted2); line-height: 1.6; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.compare-table th { font-family: var(--mono); font-size: 9px; color: var(--muted2); letter-spacing: 1px; padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border2); }
+.compare-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.compare-table td:first-child { font-weight: 600; }
+.lib-card { padding: 16px; background: var(--s3); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.lib-tag { font-family: var(--mono); font-size: 9px; padding: 3px 8px; border-radius: 10px; }
+.lib-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.lib-section-title { font-family: var(--mono); font-size: 10px; color: var(--cyan); letter-spacing: 1.5px; margin-bottom: 8px; }
+.lib-scenario { background: var(--s2); border-left: 2px solid var(--purple); padding: 10px 12px; border-radius: 0 6px 6px 0; margin-bottom: 8px; font-size: 12px; color: var(--muted2); line-height: 1.6; }
+.lib-scenario strong { color: var(--text); }
+footer { text-align: center; padding: 24px 20px; font-family: var(--mono); font-size: 10px; color: var(--muted); border-top: 1px solid var(--border); line-height: 1.8; margin-top: 20px; }
+.btn-reset { background: var(--s3); cursor: pointer; text-align: center; font-weight: 700; color: var(--cyan); padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: var(--body); font-size: 13px; }
+
+/* TECHNICAL ANALYSIS */
+.ta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.ta-card { background: var(--s3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.ta-name { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; color: var(--muted2); margin-bottom: 4px; }
+.ta-val { font-family: var(--mono); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.ta-signal { font-size: 11px; font-weight: 600; }
+.ta-signal.bull { color: var(--green); }
+.ta-signal.bear { color: var(--red); }
+.ta-signal.neutral { color: var(--yellow); }
+.ta-summary {
+  background: linear-gradient(135deg, var(--s2), var(--s3));
+  border: 2px solid; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 14px;
+}
+.ta-summary.bull { border-color: var(--green); }
+.ta-summary.bear { border-color: var(--red); }
+.ta-summary.neutral { border-color: var(--yellow); }
+.ta-summary-emoji { font-size: 36px; margin-bottom: 6px; }
+.ta-summary-title { font-family: var(--display); font-size: 22px; letter-spacing: 1px; }
+
+/* MINI CHART */
+.mini-chart-wrap { background: var(--s3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+canvas { width: 100%; height: 140px; display: block; }
+
+/* TRADE BUILDER */
+.leg-card {
+  background: var(--s3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; margin-bottom: 10px; position: relative;
+}
+.leg-card.long { border-left: 3px solid var(--green); }
+.leg-card.short { border-left: 3px solid var(--red); }
+.leg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.leg-title { font-size: 13px; font-weight: 700; }
+.leg-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 18px; padding: 0 4px; }
+.leg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.leg-input { width: 100%; background: var(--s2); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 8px 10px; border-radius: 6px; outline: none; }
+.leg-input:focus { border-color: var(--cyan); }
+.leg-label { font-family: var(--mono); font-size: 9px; color: var(--muted2); letter-spacing: 1px; margin-bottom: 3px; }
+.leg-buttons { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.leg-add-btn {
+  flex: 1; padding: 10px; border: 1px dashed var(--border2); background: transparent;
+  color: var(--muted2); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
+  min-width: 100px;
+}
+.leg-add-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* SEARCH RESULTS */
+.search-results {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--s2); border: 1px solid var(--border2); border-radius: 8px;
+  margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 50;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+.search-result-item {
+  padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.search-result-item:hover { background: var(--s3); }
+.search-result-item:last-child { border-bottom: none; }
+.search-box-wrap { position: relative; }
+
+/* SCENARIO BARS */
+.scen-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: var(--s3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 7px; position: relative; overflow: hidden; }
+.scen-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: var(--w, 0); background: var(--c, transparent); transition: width 0.6s; }
+.scen-left, .scen-right { position: relative; z-index: 1; }
+.scen-name { font-size: 13px; font-weight: 600; }
+.scen-sub { font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.scen-right { text-align: right; }
+.scen-val { font-family: var(--mono); font-size: 14px; font-weight: 700; }
+.scen-pct { font-family: var(--mono); font-size: 10px; }
+
+/* RISK ASSISTANT */
+.risk-step {
+  display: flex; gap: 12px; padding: 14px;
+  background: var(--s3); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px;
+}
+.risk-step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--purple);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-weight: 700; font-size: 13px; flex-shrink: 0;
+}
+.risk-step-content { flex: 1; }
+.risk-step-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.risk-step-formula { font-family: var(--mono); font-size: 11px; color: var(--muted2); padding: 8px; background: var(--s2); border-radius: 4px; margin: 6px 0; }
+.risk-step-result { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--green); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">OPTIONS · LAB · ULTIMATE</div>
+  <div class="api-status">
+    <div class="api-dot" id="api-dot"></div>
+    <span id="api-text">PRÜFE...</span>
+  </div>
+</nav>
+
+<div class="asset-picker">
+  <div class="picker-label">📡 ASSET WÄHLEN</div>
+  <div class="search-box-wrap">
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="SUCHE: TICKER ODER NAME (z.B. AMZN, BMW)" oninput="searchAssets()" onkeydown="if(event.key==='Enter') addCustomTicker()">
+      <button onclick="addCustomTicker()">+</button>
+    </div>
+    <div id="search-results" class="search-results" style="display:none"></div>
+  </div>
+  <div class="category-row">
+    <button class="cat-btn active" onclick="filterCat('all')">Alle</button>
+    <button class="cat-btn" onclick="filterCat('commodity')">Rohstoffe</button>
+    <button class="cat-btn" onclick="filterCat('us-tech')">US Tech</button>
+    <button class="cat-btn" onclick="filterCat('us-other')">US Andere</button>
+    <button class="cat-btn" onclick="filterCat('de')">DAX</button>
+    <button class="cat-btn" onclick="filterCat('eu')">EU</button>
+    <button class="cat-btn" onclick="filterCat('crypto')">Krypto</button>
+    <button class="cat-btn" onclick="filterCat('index')">Indizes</button>
+  </div>
+  <div class="asset-grid" id="asset-grid"></div>
+</div>
+
+<div class="selected-asset">
+  <div class="sel-top">
+    <div>
+      <div class="sel-name" id="sel-name">Brent Crude</div>
+      <div class="sel-ticker" id="sel-ticker">BZ=F · COMMODITY</div>
+    </div>
+    <div>
+      <div class="sel-price" id="sel-price">110.00</div>
+      <div class="sel-change up" id="sel-change">+0%</div>
+    </div>
+  </div>
+  <div class="sel-meta">
+    <div class="meta-item"><div class="meta-label">52W HOCH</div><div class="meta-val" id="m-high">—</div></div>
+    <div class="meta-item"><div class="meta-label">52W TIEF</div><div class="meta-val" id="m-low">—</div></div>
+    <div class="meta-item"><div class="meta-label">52W VOLA</div><div class="meta-val" id="m-vola" style="color:var(--cyan)">—</div></div>
+    <div class="meta-item"><div class="meta-label">RANGE %</div><div class="meta-val" id="m-range">—</div></div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('strategy')">🎯 Strategien</button>
+  <button class="tab-btn" onclick="switchTab('builder')">🔨 Trade Builder</button>
+  <button class="tab-btn" onclick="switchTab('ta')">📊 Technische Analyse</button>
+  <button class="tab-btn" onclick="switchTab('risk')">💰 Risk</button>
+  <button class="tab-btn" onclick="switchTab('library')">📚 Bibliothek</button>
+</div>
+
+<!-- STRATEGY TAB -->
+<div class="panel active" id="panel-strategy">
+  <div class="card">
+    <div class="card-head">📈 Marktmeinung & Parameter</div>
+    <div class="market-view-row">
+      <div class="mv-btn bull active" onclick="setMarketView('bull')"><span class="mv-emoji">📈</span><div class="mv-label">BULLISH</div></div>
+      <div class="mv-btn neutral" onclick="setMarketView('neutral')"><span class="mv-emoji">⚖️</span><div class="mv-label">NEUTRAL</div></div>
+      <div class="mv-btn bear" onclick="setMarketView('bear')"><span class="mv-emoji">📉</span><div class="mv-label">BEARISH</div></div>
+    </div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Erwartete Bewegung</span><span class="slider-val" id="move-v">15%</span></div><input type="range" id="move" min="3" max="50" value="15" oninput="rankStrategies()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Volatilitäts-Erwartung</span><span class="slider-val" id="vol-v">Bleibt gleich</span></div><input type="range" id="vol" min="-2" max="2" value="0" oninput="rankStrategies()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Zeithorizont (Monate)</span><span class="slider-val" id="time-v">3</span></div><input type="range" id="time" min="1" max="12" value="3" oninput="rankStrategies()"></div>
+    <div><label class="input-label">Einsatz (€)</label><input type="number" class="num-input" id="capital" value="500" oninput="rankStrategies()"></div>
+  </div>
+  <div class="card">
+    <div class="card-head">🏆 Strategien gerankt</div>
+    <div id="strategy-list"></div>
+  </div>
+</div>
+
+<!-- TRADE BUILDER TAB -->
+<div class="panel" id="panel-builder">
+  <div class="explain">
+    <div class="explain-title">🔨 Eigenen Trade konfigurieren</div>
+    <p>Gib deine konkreten Optionsschein-Daten ein. Du kannst beliebig viele Beine (Legs) hinzufügen für komplexe Strategien wie Spreads, Straddles oder Iron Condors.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">📥 Deine Beine</div>
+    <div id="legs-container"></div>
+    <div class="leg-buttons">
+      <button class="leg-add-btn" onclick="addLeg('long','call')" style="border-color:rgba(0,230,118,0.3); color:var(--green)">+ LONG CALL</button>
+      <button class="leg-add-btn" onclick="addLeg('long','put')" style="border-color:rgba(0,230,118,0.3); color:var(--green)">+ LONG PUT</button>
+      <button class="leg-add-btn" onclick="addLeg('short','call')" style="border-color:rgba(255,61,61,0.3); color:var(--red)">+ SHORT CALL</button>
+      <button class="leg-add-btn" onclick="addLeg('short','put')" style="border-color:rgba(255,61,61,0.3); color:var(--red)">+ SHORT PUT</button>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:14px">
+      <button class="btn-reset" onclick="loadPreset('bull-spread')" style="font-size:11px">Bull Spread</button>
+      <button class="btn-reset" onclick="loadPreset('bear-spread')" style="font-size:11px">Bear Spread</button>
+      <button class="btn-reset" onclick="loadPreset('straddle')" style="font-size:11px">Straddle</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">🎯 Zielkurs simulieren</div>
+    <div class="slider-row">
+      <div class="slider-top"><span class="slider-name">Underlying-Preis bei Fälligkeit</span><span class="slider-val" id="b-target-v">100</span></div>
+      <input type="range" id="b-target" min="1" max="1000" value="100" oninput="calcBuilder()">
+    </div>
+    <div id="builder-result"></div>
+    <div class="mini-chart-wrap">
+      <canvas id="builder-chart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">🎲 Szenarien</div>
+    <div id="builder-scenarios"></div>
+  </div>
+</div>
+
+<!-- TECHNICAL ANALYSIS TAB -->
+<div class="panel" id="panel-ta">
+  <div id="ta-summary-wrap"></div>
+
+  <div class="card">
+    <div class="card-head">📊 Indikatoren</div>
+    <div class="ta-grid" id="ta-indicators"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">📈 Kurschart (1 Jahr)</div>
+    <div class="mini-chart-wrap" style="height:180px">
+      <canvas id="ta-chart" style="height:160px"></canvas>
+    </div>
+    <div style="font-size:11px; color:var(--muted2); text-align:center; margin-top:6px; font-family:var(--mono)">
+      MA50 (gelb) · MA200 (orange) · Aktueller Kurs (cyan)
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">💡 Interpretation</div>
+    <div id="ta-interpretation"></div>
+  </div>
+</div>
+
+<!-- RISK TAB -->
+<div class="panel" id="panel-risk">
+  <div class="card">
+    <div class="card-head">🧮 Risk-pro-Trade Assistent</div>
+    <div class="explain">
+      <div class="explain-title">💡 Schritt-für-Schritt</div>
+      <p>Berechnung aus Profi-Sicht: Wie viel solltest du in EINEN Trade investieren, um langfristig zu überleben?</p>
+    </div>
+
+    <div style="margin-bottom:14px"><label class="input-label">Gesamtkapital (€)</label><input type="number" class="num-input" id="ra-total" value="5000" oninput="calcRiskAssistant()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Risiko-Profil</span><span class="slider-val" id="ra-prof-v">Moderat</span></div><input type="range" id="ra-prof" min="1" max="3" value="2" oninput="calcRiskAssistant()"></div>
+    <div style="margin-bottom:14px"><label class="input-label">Geplanter Stop-Loss vom Einstieg (%)</label><input type="number" class="num-input" id="ra-sl" value="50" oninput="calcRiskAssistant()"></div>
+    <div style="margin-bottom:14px"><label class="input-label">Erwartete Win-Rate (%)</label><input type="number" class="num-input" id="ra-wr" value="40" oninput="calcRiskAssistant()"></div>
+
+    <div id="ra-result"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">🎓 Risiko-Profil Test</div>
+    <div id="quiz-area">
+      <div class="quiz-q"><div class="quiz-question">1. Wie viel deines Kapitals würdest du für Optionsscheine einsetzen?</div><div class="quiz-options">
+        <div class="quiz-opt" onclick="answerQuiz(0,1)">Maximal 5% – Hauptkapital sicher</div>
+        <div class="quiz-opt" onclick="answerQuiz(0,2)">5-15% – Etwas Risiko ist okay</div>
+        <div class="quiz-opt" onclick="answerQuiz(0,3)">15-30% – Spürbare Gewinne erwünscht</div>
+        <div class="quiz-opt" onclick="answerQuiz(0,4)">30%+ – Ich gehe All-in</div>
+      </div></div>
+      <div class="quiz-q"><div class="quiz-question">2. Was machst du nach 3 Verlust-Trades in Folge?</div><div class="quiz-options">
+        <div class="quiz-opt" onclick="answerQuiz(1,1)">Pause machen, Strategie überdenken</div>
+        <div class="quiz-opt" onclick="answerQuiz(1,2)">Position verkleinern, weitermachen</div>
+        <div class="quiz-opt" onclick="answerQuiz(1,3)">Position vergrößern, "muss klappen"</div>
+        <div class="quiz-opt" onclick="answerQuiz(1,4)">All-in für den Comeback</div>
+      </div></div>
+      <div class="quiz-q"><div class="quiz-question">3. Erfahrung mit Hebelprodukten?</div><div class="quiz-options">
+        <div class="quiz-opt" onclick="answerQuiz(2,1)">Komplett neu</div>
+        <div class="quiz-opt" onclick="answerQuiz(2,2)">Einige Trades gemacht</div>
+        <div class="quiz-opt" onclick="answerQuiz(2,3)">Regelmäßig aktiv</div>
+        <div class="quiz-opt" onclick="answerQuiz(2,4)">Profi-Trader</div>
+      </div></div>
+    </div>
+    <div id="profile-result-wrap" style="display:none">
+      <div class="profile-result" id="profile-result">
+        <div class="profile-emoji" id="prof-emoji">🛡️</div>
+        <div class="profile-title" id="prof-title">CONSERVATIVE</div>
+        <div class="profile-text" id="prof-text"></div>
+      </div>
+      <button class="btn-reset" onclick="resetQuiz()">Test wiederholen</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">📐 Kelly-Formel</div>
+    <div style="margin-bottom:14px"><label class="input-label">Gesamtkapital (€)</label><input type="number" class="num-input" id="kelly-cap" value="1000" oninput="calcKelly()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Win-Rate</span><span class="slider-val" id="kelly-wr-v">45%</span></div><input type="range" id="kelly-wr" min="20" max="80" value="45" oninput="calcKelly()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Avg. Gewinn (%)</span><span class="slider-val" id="kelly-win-v">200%</span></div><input type="range" id="kelly-win" min="20" max="500" value="200" oninput="calcKelly()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Avg. Verlust (%)</span><span class="slider-val" id="kelly-loss-v">100%</span></div><input type="range" id="kelly-loss" min="20" max="100" value="100" oninput="calcKelly()"></div>
+    <div id="kelly-result"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">📉 Drawdown Simulator</div>
+    <div style="margin-bottom:14px"><label class="input-label">Startkapital (€)</label><input type="number" class="num-input" id="dd-cap" value="1000" oninput="calcDrawdown()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Risk pro Trade</span><span class="slider-val" id="dd-risk-v">5%</span></div><input type="range" id="dd-risk" min="1" max="50" value="5" oninput="calcDrawdown()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Verlust-Trades</span><span class="slider-val" id="dd-n-v">5</span></div><input type="range" id="dd-n" min="2" max="15" value="5" oninput="calcDrawdown()"></div>
+    <div id="dd-result"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">🇩🇪 Steuer-Rechner</div>
+    <div style="margin-bottom:14px"><label class="input-label">Brutto-Gewinn (€)</label><input type="number" class="num-input" id="tax-gain" value="1000" oninput="calcTax()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Bereits genutzter Freibetrag</span><span class="slider-val" id="tax-free-v">0€</span></div><input type="range" id="tax-free" min="0" max="1000" value="0" oninput="calcTax()"></div>
+    <div style="margin-bottom:8px"><label class="input-label"><input type="checkbox" id="tax-church" onchange="calcTax()" style="margin-right:6px">Kirchensteuerpflichtig</label></div>
+    <div id="tax-result"></div>
+  </div>
+</div>
+
+<!-- LIBRARY TAB -->
+<div class="panel" id="panel-library">
+  <div class="explain">
+    <div class="explain-title">📚 Detaillierte Strategie-Bibliothek</div>
+    <p>Jede Strategie mit konkreten Marktszenarien, Beispielen und Wann-Wie-Warum.</p>
+  </div>
+  <div id="library-content"></div>
+</div>
+
+<footer>
+  OPTIONS LAB ULTIMATE · KEINE ANLAGEBERATUNG<br>
+  Live-Daten via Stooq + Demo-Fallback · Berechnungen vereinfacht<br>
+  ⚠️ 74-89% der Privatanleger verlieren Geld mit Hebelprodukten
+</footer>
+
+<script>
+// ============ ASSETS - 60+ ============
+const ASSETS = [
+  // Rohstoffe
+  { ticker: 'BZ=F', name: 'Brent Crude', cat: 'commodity', macro: 'oil' },
+  { ticker: 'CL=F', name: 'WTI Crude', cat: 'commodity', macro: 'oil' },
+  { ticker: 'GC=F', name: 'Gold', cat: 'commodity', macro: 'safehaven' },
+  { ticker: 'SI=F', name: 'Silver', cat: 'commodity', macro: 'safehaven' },
+  { ticker: 'PL=F', name: 'Platinum', cat: 'commodity', macro: 'industrial' },
+  { ticker: 'PA=F', name: 'Palladium', cat: 'commodity', macro: 'industrial' },
+  { ticker: 'HG=F', name: 'Copper', cat: 'commodity', macro: 'industrial' },
+  { ticker: 'NG=F', name: 'Natural Gas', cat: 'commodity', macro: 'energy' },
+
+  // US Tech
+  { ticker: 'AAPL', name: 'Apple', cat: 'us-tech', macro: 'bigtech' },
+  { ticker: 'MSFT', name: 'Microsoft', cat: 'us-tech', macro: 'bigtech' },
+  { ticker: 'NVDA', name: 'NVIDIA', cat: 'us-tech', macro: 'ai' },
+  { ticker: 'TSLA', name: 'Tesla', cat: 'us-tech', macro: 'ev' },
+  { ticker: 'GOOGL', name: 'Alphabet', cat: 'us-tech', macro: 'bigtech' },
+  { ticker: 'META', name: 'Meta', cat: 'us-tech', macro: 'bigtech' },
+  { ticker: 'AMZN', name: 'Amazon', cat: 'us-tech', macro: 'bigtech' },
+  { ticker: 'NFLX', name: 'Netflix', cat: 'us-tech', macro: 'streaming' },
+  { ticker: 'AMD', name: 'AMD', cat: 'us-tech', macro: 'ai' },
+  { ticker: 'INTC', name: 'Intel', cat: 'us-tech', macro: 'semi' },
+  { ticker: 'CRM', name: 'Salesforce', cat: 'us-tech', macro: 'saas' },
+  { ticker: 'ORCL', name: 'Oracle', cat: 'us-tech', macro: 'saas' },
+  { ticker: 'ADBE', name: 'Adobe', cat: 'us-tech', macro: 'saas' },
+  { ticker: 'CSCO', name: 'Cisco', cat: 'us-tech', macro: 'networking' },
+  { ticker: 'PLTR', name: 'Palantir', cat: 'us-tech', macro: 'ai' },
+
+  // US Andere
+  { ticker: 'XOM', name: 'ExxonMobil', cat: 'us-other', macro: 'oil-stock' },
+  { ticker: 'CVX', name: 'Chevron', cat: 'us-other', macro: 'oil-stock' },
+  { ticker: 'JPM', name: 'JPMorgan', cat: 'us-other', macro: 'bank' },
+  { ticker: 'BAC', name: 'Bank of America', cat: 'us-other', macro: 'bank' },
+  { ticker: 'GS', name: 'Goldman Sachs', cat: 'us-other', macro: 'bank' },
+  { ticker: 'WMT', name: 'Walmart', cat: 'us-other', macro: 'consumer' },
+  { ticker: 'KO', name: 'Coca-Cola', cat: 'us-other', macro: 'consumer' },
+  { ticker: 'PEP', name: 'PepsiCo', cat: 'us-other', macro: 'consumer' },
+  { ticker: 'DIS', name: 'Disney', cat: 'us-other', macro: 'media' },
+  { ticker: 'BA', name: 'Boeing', cat: 'us-other', macro: 'aero' },
+  { ticker: 'PFE', name: 'Pfizer', cat: 'us-other', macro: 'pharma' },
+  { ticker: 'JNJ', name: 'Johnson & Johnson', cat: 'us-other', macro: 'pharma' },
+  { ticker: 'V', name: 'Visa', cat: 'us-other', macro: 'payment' },
+
+  // DAX
+  { ticker: 'SAP.DE', name: 'SAP', cat: 'de', macro: 'eu-tech' },
+  { ticker: 'SIE.DE', name: 'Siemens', cat: 'de', macro: 'industrial' },
+  { ticker: 'ALV.DE', name: 'Allianz', cat: 'de', macro: 'insurance' },
+  { ticker: 'BMW.DE', name: 'BMW', cat: 'de', macro: 'auto' },
+  { ticker: 'VOW3.DE', name: 'Volkswagen', cat: 'de', macro: 'auto' },
+  { ticker: 'BAS.DE', name: 'BASF', cat: 'de', macro: 'chemicals' },
+  { ticker: 'DTE.DE', name: 'Dt. Telekom', cat: 'de', macro: 'telco' },
+  { ticker: 'MBG.DE', name: 'Mercedes-Benz', cat: 'de', macro: 'auto' },
+  { ticker: 'DBK.DE', name: 'Deutsche Bank', cat: 'de', macro: 'bank' },
+  { ticker: 'IFX.DE', name: 'Infineon', cat: 'de', macro: 'semi' },
+  { ticker: 'ADS.DE', name: 'Adidas', cat: 'de', macro: 'consumer' },
+  { ticker: 'AIR.DE', name: 'Airbus', cat: 'de', macro: 'aero' },
+
+  // EU
+  { ticker: 'ASML.AS', name: 'ASML', cat: 'eu', macro: 'semi' },
+  { ticker: 'LVMH.PA', name: 'LVMH', cat: 'eu', macro: 'luxury' },
+  { ticker: 'NESN.SW', name: 'Nestlé', cat: 'eu', macro: 'consumer' },
+  { ticker: 'NOVN.SW', name: 'Novartis', cat: 'eu', macro: 'pharma' },
+  { ticker: 'TTE.PA', name: 'TotalEnergies', cat: 'eu', macro: 'oil-stock' },
+
+  // Krypto
+  { ticker: 'BTC-USD', name: 'Bitcoin', cat: 'crypto', macro: 'crypto' },
+  { ticker: 'ETH-USD', name: 'Ethereum', cat: 'crypto', macro: 'crypto' },
+
+  // Indizes
+  { ticker: '^GSPC', name: 'S&P 500', cat: 'index', macro: 'us-broad' },
+  { ticker: '^NDX', name: 'Nasdaq 100', cat: 'index', macro: 'us-tech-idx' },
+  { ticker: '^DJI', name: 'Dow Jones', cat: 'index', macro: 'us-broad' },
+  { ticker: '^GDAXI', name: 'DAX', cat: 'index', macro: 'de-broad' },
+  { ticker: '^STOXX50E', name: 'Euro Stoxx 50', cat: 'index', macro: 'eu-broad' },
+  { ticker: '^FTSE', name: 'FTSE 100', cat: 'index', macro: 'uk-broad' },
+  { ticker: '^N225', name: 'Nikkei 225', cat: 'index', macro: 'jp-broad' },
+  { ticker: '^VIX', name: 'VIX (Fear)', cat: 'index', macro: 'fear' },
+  { ticker: '^RUT', name: 'Russell 2000', cat: 'index', macro: 'us-small' },
+];
+
+const STOOQ_MAP = {
+  'BZ=F': 'cb.f', 'CL=F': 'cl.f', 'GC=F': 'gc.f', 'SI=F': 'si.f', 'PL=F': 'pl.f', 'PA=F': 'pa.f', 'HG=F': 'hg.f', 'NG=F': 'ng.f',
+  'AAPL': 'aapl.us', 'MSFT': 'msft.us', 'NVDA': 'nvda.us', 'TSLA': 'tsla.us', 'GOOGL': 'googl.us',
+  'META': 'meta.us', 'AMZN': 'amzn.us', 'NFLX': 'nflx.us', 'AMD': 'amd.us', 'INTC': 'intc.us',
+  'CRM': 'crm.us', 'ORCL': 'orcl.us', 'ADBE': 'adbe.us', 'CSCO': 'csco.us', 'PLTR': 'pltr.us',
+  'XOM': 'xom.us', 'CVX': 'cvx.us', 'JPM': 'jpm.us', 'BAC': 'bac.us', 'GS': 'gs.us',
+  'WMT': 'wmt.us', 'KO': 'ko.us', 'PEP': 'pep.us', 'DIS': 'dis.us', 'BA': 'ba.us',
+  'PFE': 'pfe.us', 'JNJ': 'jnj.us', 'V': 'v.us',
+  'SAP.DE': 'sap.de', 'SIE.DE': 'sie.de', 'ALV.DE': 'alv.de', 'BMW.DE': 'bmw.de',
+  'VOW3.DE': 'vow3.de', 'BAS.DE': 'bas.de', 'DTE.DE': 'dte.de', 'MBG.DE': 'mbg.de',
+  'DBK.DE': 'dbk.de', 'IFX.DE': 'ifx.de', 'ADS.DE': 'ads.de', 'AIR.DE': 'air.de',
+  'ASML.AS': 'asml.nl', 'LVMH.PA': 'mc.fr', 'NESN.SW': 'nesn.ch', 'NOVN.SW': 'novn.ch', 'TTE.PA': 'tte.fr',
+  'BTC-USD': 'btcusd', 'ETH-USD': 'ethusd',
+  '^GSPC': '^spx', '^NDX': '^ndx', '^DJI': '^dji', '^GDAXI': '^dax',
+  '^STOXX50E': '^stoxx50', '^FTSE': '^ftse', '^N225': '^nkx', '^VIX': '^vix', '^RUT': '^rut'
+};
+
+const FALLBACK = {
+  'BZ=F':110,'CL=F':105,'GC=F':2400,'SI=F':30,'PL=F':1000,'PA=F':1100,'HG=F':4.5,'NG=F':3,
+  'AAPL':220,'MSFT':420,'NVDA':130,'TSLA':250,'GOOGL':175,'META':580,'AMZN':195,'NFLX':650,
+  'AMD':140,'INTC':25,'CRM':280,'ORCL':165,'ADBE':480,'CSCO':55,'PLTR':45,
+  'XOM':120,'CVX':160,'JPM':220,'BAC':45,'GS':500,'WMT':95,'KO':70,'PEP':165,'DIS':95,
+  'BA':170,'PFE':28,'JNJ':155,'V':285,
+  'SAP.DE':220,'SIE.DE':175,'ALV.DE':320,'BMW.DE':90,'VOW3.DE':105,'BAS.DE':50,'DTE.DE':30,
+  'MBG.DE':65,'DBK.DE':17,'IFX.DE':35,'ADS.DE':230,'AIR.DE':165,
+  'ASML.AS':700,'LVMH.PA':650,'NESN.SW':85,'NOVN.SW':100,'TTE.PA':60,
+  'BTC-USD':95000,'ETH-USD':3500,
+  '^GSPC':5800,'^NDX':20500,'^DJI':42000,'^GDAXI':19500,'^STOXX50E':5000,'^FTSE':8200,'^N225':38000,'^VIX':16,'^RUT':2300
+};
+
+// ============ STRATEGIES ============
+const STRATEGIES = [
+  { id: 'long-call', name: 'Long Call', emoji: '📈', desc: 'Wette auf steigende Kurse', bestFor: ['bull'], volBenefit: 1, timeDecay: -2,
+    explain: 'Kaufe Call. Steigt der Kurs, gewinnst du. Max-Verlust = Prämie. Hoher Hebel.',
+    detailed: {
+      wann: 'Wenn du eine starke Aufwärtsbewegung erwartest und Volatilität tendenziell steigt.',
+      beispiele: [
+        'NVIDIA vor Quartalszahlen: Du erwartest positive Earnings → Long Call kurz vor Bekanntgabe',
+        'S&P 500 nach Crash auf 5500 von 7200: Markt überverkauft, Long Call auf Erholung',
+        'Bitcoin nach Halving: Historisch positive Saisonalität'
+      ],
+      warnung: 'Theta tickt täglich gegen dich. Bei Seitwärts-Bewegung verlierst du trotz richtiger Richtung.',
+      maxGain: 'Theoretisch unbegrenzt nach oben',
+      maxLoss: 'Komplette Prämie',
+      breakeven: 'Strike + Prämie/Bezugsverhältnis'
+    }
+  },
+  { id: 'long-put', name: 'Long Put', emoji: '📉', desc: 'Wette auf fallende Kurse', bestFor: ['bear'], volBenefit: 1, timeDecay: -2,
+    explain: 'Kaufe Put. Fällt der Kurs, gewinnst du. Max-Verlust = Prämie.',
+    detailed: {
+      wann: 'Bei erwarteter Abwärtsbewegung, vor Crashes, in überkauften Märkten oder als Hedge für Aktiendepot.',
+      beispiele: [
+        'Öl bei $110 nach Iran-Eskalation: Friedensabkommen würde Preis auf $70-80 drücken → Long Put',
+        'S&P 500 bei Allzeithoch nach 30% Jahresrally: Long Put als günstige Korrektur-Wette',
+        'BMW vor schlechten China-Zahlen: Long Put auf erwartete schlechte Quartalszahlen'
+      ],
+      warnung: 'Bei sehr hoher Volatilität (wie Iran-Krieg) extrem teuer. Vol Crush möglich nach Friedensschluss.',
+      maxGain: 'Strike × Bezugsverhältnis (wenn Kurs auf 0 fällt)',
+      maxLoss: 'Komplette Prämie',
+      breakeven: 'Strike - Prämie/Bezugsverhältnis'
+    }
+  },
+  { id: 'bull-call-spread', name: 'Bull Call Spread', emoji: '📊', desc: 'Begrenzter Bullish-Trade', bestFor: ['bull'], volBenefit: 0, timeDecay: -1,
+    explain: 'Long Call + Short Call (höherer Strike). Reduziert Kosten, begrenzt Gewinn UND Verlust.',
+    detailed: {
+      wann: 'Wenn du moderate Aufwärtsbewegung erwartest (5-15%) und nicht das volle Premium für reinen Call zahlen willst.',
+      beispiele: [
+        'SAP nach Q3-Zahlen: Erwartung +10% in 3 Monaten → Long Call 220€ + Short Call 250€',
+        'DAX bei 19500 → Erwartet 21000 → Bull Call Spread reduziert Kosten um 40-50%',
+        'Allianz bei moderater Erwartung: 320€ → 340€ → günstige Strategie'
+      ],
+      warnung: 'Maximaler Gewinn ist begrenzt durch Short-Strike. Bei mega-rally entgeht dir der Rest.',
+      maxGain: '(Short Strike - Long Strike) × Ratio - Netto Prämie',
+      maxLoss: 'Netto Prämie (Long Prämie - Short Prämie)',
+      breakeven: 'Long Strike + Netto Prämie/Ratio'
+    }
+  },
+  { id: 'bear-put-spread', name: 'Bear Put Spread', emoji: '📊', desc: 'Begrenzter Bearish-Trade', bestFor: ['bear'], volBenefit: 0, timeDecay: -1,
+    explain: 'Long Put + Short Put (niedrigerer Strike). Günstiger als reiner Put, begrenzt Gewinn UND Verlust.',
+    detailed: {
+      wann: 'Bei erwarteter moderater Abwärtsbewegung, wenn reiner Put zu teuer ist (hohe Vola).',
+      beispiele: [
+        'Brent bei $110 mit Iran-Risiko: Long Put 100$ + Short Put 80$ → günstig & abgesichert',
+        'Tesla bei $250 nach Hype: Long Put 240$ + Short Put 200$ → Korrekturwette',
+        'Nasdaq nahe Hoch: Bear Put Spread fängt 5-10% Korrektur'
+      ],
+      warnung: 'Auch hier: Maximaler Gewinn begrenzt. Bei Crash entgehen dir Gewinne unter Short-Strike.',
+      maxGain: '(Long Strike - Short Strike) × Ratio - Netto Prämie',
+      maxLoss: 'Netto Prämie',
+      breakeven: 'Long Strike - Netto Prämie/Ratio'
+    }
+  },
+  { id: 'long-straddle', name: 'Long Straddle', emoji: '🎰', desc: 'Wette auf STARKE Bewegung', bestFor: ['neutral'], volBenefit: 2, timeDecay: -3,
+    explain: 'Call + Put zum gleichen Strike. Gewinnt bei starker Bewegung in jede Richtung.',
+    detailed: {
+      wann: 'Vor Earnings, FED-Entscheidungen, OPEC-Meetings, Wahlen – wenn du große Bewegung erwartest, aber nicht weißt in welche Richtung.',
+      beispiele: [
+        'NVIDIA vor Earnings: Du erwartest ±15% Bewegung → Straddle profitiert in beide Richtungen',
+        'FED-Sitzung: Big Move erwartet → Straddle auf S&P',
+        'OPEC-Meeting: Öl-Bewegung sicher, Richtung unsicher → Brent Straddle'
+      ],
+      warnung: 'Sehr teuer (zwei Optionen). Bei Seitwärts-Move (nach Earnings oft "sell the news") = großer Verlust durch Vol Crush.',
+      maxGain: 'Theoretisch unbegrenzt',
+      maxLoss: 'Komplette Prämie (beide Optionen)',
+      breakeven: 'Strike ± Gesamtprämie/Ratio (zwei Punkte!)'
+    }
+  },
+  { id: 'long-strangle', name: 'Long Strangle', emoji: '🎯', desc: 'Günstigerer Straddle', bestFor: ['neutral'], volBenefit: 2, timeDecay: -3,
+    explain: 'Wie Straddle, aber Call und Put haben verschiedene Strikes (OTM). Günstiger, braucht aber größere Bewegung.',
+    detailed: {
+      wann: 'Wenn du große Bewegung erwartest, aber Straddle zu teuer ist. Mehr Bewegung nötig zum Break-Even.',
+      beispiele: [
+        'Tesla vor Earnings: Strangle 230P/270C ist günstiger als Straddle 250',
+        'Bitcoin vor Halving: Strangle 90k/110k auf große Bewegung',
+        'Pharma-Aktie vor FDA-Entscheidung: Strangle billig + asymmetrische Bewegung wahrscheinlich'
+      ],
+      warnung: 'Braucht größere Bewegung als Straddle für Break-Even. Bei mittlerer Bewegung Verlust.',
+      maxGain: 'Theoretisch unbegrenzt',
+      maxLoss: 'Komplette Prämie',
+      breakeven: 'Call-Strike + Prämie/Ratio bzw. Put-Strike - Prämie/Ratio'
+    }
+  },
+  { id: 'short-strangle', name: 'Short Strangle', emoji: '🌀', desc: 'Wette auf SEITWÄRTS', bestFor: ['neutral'], volBenefit: -2, timeDecay: 3,
+    explain: 'Verkaufe Call + Verkaufe Put außerhalb der Range. Du KASSIERST Prämie. Theoretisch unbegrenztes Risiko!',
+    detailed: {
+      wann: 'In Seitwärts-Märkten mit hoher impliziter Volatilität. Du wettest auf Vol-Crush und Range-bound Bewegung.',
+      beispiele: [
+        'Nach VIX-Spike: VIX bei 30 → wirst Strangle, profitierst von Beruhigung',
+        'Coca-Cola in Range zwischen 65-72€: Short Strangle 60P/75C',
+        'DAX in Konsolidierung: Strangle außerhalb der Range'
+      ],
+      warnung: '⚠️ EXTREM RISKANT für Privatanleger! Bei Crash unbegrenzter Verlust. Nur für Profis mit Margin.',
+      maxGain: 'Erhaltene Prämie (begrenzt)',
+      maxLoss: 'Theoretisch unbegrenzt',
+      breakeven: 'Call-Strike + Prämie bzw. Put-Strike - Prämie'
+    }
+  },
+  { id: 'iron-condor', name: 'Iron Condor', emoji: '🦅', desc: 'Premium für Seitwärts', bestFor: ['neutral'], volBenefit: -1, timeDecay: 2,
+    explain: '4 Optionen: Bull Put Spread + Bear Call Spread. Verdient bei Range-bound. Begrenztes Risiko & Gewinn.',
+    detailed: {
+      wann: 'Identisch zu Short Strangle, aber mit BEGRENZTEM Risiko. Profis Lieblings-Strategie für Seitwärtsmärkte.',
+      beispiele: [
+        'S&P 500 in 4-Wochen-Range: Iron Condor 5700/5750 - 5900/5950',
+        'Coca-Cola stabile Phase: Condor mit ±5% Range',
+        'Index ETF nach Rallye: Condor erwartet Konsolidierung'
+      ],
+      warnung: 'Begrenzter Gewinn (oft nur 10-30% des Risikos). Bei Breakout Verlust.',
+      maxGain: 'Erhaltene Netto-Prämie',
+      maxLoss: 'Spread-Breite - Netto-Prämie',
+      breakeven: 'Zwei Punkte oben und unten'
+    }
+  },
+  { id: 'protective-put', name: 'Protective Put', emoji: '🛡️', desc: 'Aktien absichern', bestFor: ['bull','neutral'], volBenefit: 0, timeDecay: -1,
+    explain: 'Du hältst Aktien + kaufst Put als Versicherung. Schützt vor Crash, kostet Versicherungsprämie.',
+    detailed: {
+      wann: 'Wenn du Aktien hältst und vor Marktrisiken (Crash, Quartalszahlen, Politik) absichern willst.',
+      beispiele: [
+        'Du hältst 100 Apple Aktien bei 220$ → kaufe Put 200$ als Versicherung',
+        'DAX-ETF Depot vor Wahlen: Put auf DAX als Hedge',
+        'Vor Earnings: Put zur Absicherung gegen Negativüberraschung'
+      ],
+      warnung: 'Kostet 2-5% pro Jahr "Versicherungsprämie". Lohnt sich nur bei echten Crash-Risiken.',
+      maxGain: 'Aktien-Upside unbegrenzt',
+      maxLoss: 'Aktie - Strike + Put-Prämie',
+      breakeven: 'Aktienkurs + Put-Prämie'
+    }
+  },
+  { id: 'covered-call', name: 'Covered Call', emoji: '💰', desc: 'Zusatzeinkommen aus Aktien', bestFor: ['neutral','bull'], volBenefit: -1, timeDecay: 2,
+    explain: 'Du hältst Aktien + verkaufst Call darüber. Du kassierst Prämie als "Dividende".',
+    detailed: {
+      wann: 'Wenn du Aktien für längere Zeit hältst und Zusatzeinnahmen generieren willst. Klassisch für Income-Investoren.',
+      beispiele: [
+        'Coca-Cola Aktien: Verkaufe monatlich Calls 5% über Kurs für extra 1-2% Income',
+        'Microsoft im Depot: Covered Call generiert Zusatzeinkommen ohne Aktien zu verkaufen',
+        'DAX-ETF: Wöchentliche Covered Calls für stetigen Cashflow'
+      ],
+      warnung: 'Wenn Aktie stark steigt, "verlierst" du den Anstieg über Strike. Aktien werden ggf. eingebucht.',
+      maxGain: 'Aktien-Upside bis Strike + erhaltene Prämie',
+      maxLoss: 'Aktie fällt komplett (minus erhaltene Prämie)',
+      breakeven: 'Aktie - erhaltene Prämie'
+    }
+  },
+  { id: 'cash-secured-put', name: 'Cash-Secured Put', emoji: '💵', desc: 'Aktien günstiger einkaufen', bestFor: ['bull','neutral'], volBenefit: -1, timeDecay: 2,
+    explain: 'Verkaufe Put auf Aktie, die du eh kaufen würdest. Bekommst Prämie. Wirst Aktie ggf. günstiger eingebucht.',
+    detailed: {
+      wann: 'Wenn du eine Aktie kaufen willst, aber zu einem niedrigeren Preis. Dafür kassierst du Prämie als Belohnung.',
+      beispiele: [
+        'Du willst Apple bei 200$ kaufen, Aktie bei 220$: Verkaufe Put 200$ → kassiere Prämie',
+        'BMW bei 90€, du willst sie bei 80€: Cash-Secured Put 80€',
+        'NVIDIA bei 130$ aber du willst bei 120$: Put verkaufen, Prämie kassieren'
+      ],
+      warnung: 'Du bist verpflichtet, die Aktie zu kaufen, wenn sie unter Strike fällt. Cash muss bereit liegen.',
+      maxGain: 'Erhaltene Prämie (wenn Put wertlos verfällt)',
+      maxLoss: 'Strike × Aktien (wenn Aktie auf 0 fällt)',
+      breakeven: 'Strike - erhaltene Prämie'
+    }
+  },
+];
+
+let currentAsset = ASSETS[0];
+let currentCat = 'all';
+let assetData = {};
+let marketView = 'bull';
+let quizAnswers = [0, 0, 0];
+let legs = [];
+let legIdCounter = 0;
+
+// ============ FETCH ============
+async function fetchPrice(asset) {
+  try {
+    const t = STOOQ_MAP[asset.ticker];
+    if (t) {
+      // Get historical data for 1 year for vola calc
+      const r = await fetch(`https://stooq.com/q/d/l/?s=${t}&d1=${getDateStr(-365)}&d2=${getDateStr(0)}&i=d`);
+      if (r.ok) {
+        const txt = await r.text();
+        const lines = txt.split('\n').filter(l => l.includes(','));
+        if (lines.length > 30) {
+          const closes = [];
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            const c = parseFloat(cols[4]);
+            if (!isNaN(c) && c > 0) closes.push(c);
+          }
+          if (closes.length > 30) {
+            const close = closes[closes.length - 1];
+            const prev = closes[closes.length - 2] || close;
+            const high52 = Math.max(...closes);
+            const low52 = Math.min(...closes);
+
+            // Calculate annualized volatility
+            const returns = [];
+            for (let i = 1; i < closes.length; i++) {
+              returns.push(Math.log(closes[i] / closes[i-1]));
+            }
+            const mean = returns.reduce((a,b) => a+b, 0) / returns.length;
+            const variance = returns.reduce((s, r) => s + (r - mean) ** 2, 0) / returns.length;
+            const dailyVol = Math.sqrt(variance);
+            const annualVol = dailyVol * Math.sqrt(252) * 100;
+
+            assetData[asset.ticker] = {
+              price: close,
+              change: ((close - prev) / prev) * 100,
+              high52, low52,
+              vola52: annualVol,
+              closes: closes,
+              live: true
+            };
+            return true;
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // Fallback
+  const fb = FALLBACK[asset.ticker] || 100;
+  assetData[asset.ticker] = {
+    price: fb, change: 0,
+    high52: fb * 1.25, low52: fb * 0.75,
+    vola52: 25,
+    closes: generateFakeCloses(fb),
+    live: false
+  };
+  return false;
+}
+
+function getDateStr(daysOffset) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  return d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2);
+}
+
+function generateFakeCloses(start) {
+  const arr = [];
+  let v = start * 0.85;
+  for (let i = 0; i < 250; i++) {
+    v = v * (1 + (Math.random() - 0.48) * 0.02);
+    arr.push(v);
+  }
+  arr[arr.length-1] = start;
+  return arr;
+}
+
+async function loadAll() {
+  let ok = 0;
+  // Load in batches to not overwhelm
+  for (const a of ASSETS) {
+    if (await fetchPrice(a)) ok++;
+  }
+  if (ok > ASSETS.length / 2) {
+    document.getElementById('api-dot').classList.add('ok');
+    document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' LIVE';
+  } else if (ok > 0) {
+    document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' TEILS LIVE';
+  } else {
+    document.getElementById('api-dot').classList.add('fail');
+    document.getElementById('api-text').textContent = 'DEMO';
+  }
+  renderAssets();
+  selectAsset(currentAsset.ticker);
+}
+
+function filterCat(c) {
+  currentCat = c;
+  document.querySelectorAll('.cat-btn').forEach((b,i) => b.classList.toggle('active', ['all','commodity','us-tech','us-other','de','eu','crypto','index'][i] === c));
+  renderAssets();
+}
+
+function renderAssets() {
+  const filtered = currentCat === 'all' ? ASSETS : ASSETS.filter(a => a.cat === currentCat);
+  document.getElementById('asset-grid').innerHTML = filtered.map(a => {
+    const d = assetData[a.ticker] || {};
+    const sel = currentAsset.ticker === a.ticker;
+    return `<div class="asset-card ${sel?'selected':''}" onclick="selectAsset('${a.ticker}')">
+      <div class="asset-name">${a.name}</div>
+      <div class="asset-ticker">${a.ticker}</div>
+      <div class="asset-price">${d.price ? d.price.toFixed(2) : '...'}</div>
+      ${d.change !== undefined ? `<div class="asset-change ${d.change>=0?'up':'down'}">${d.change>=0?'+':''}${d.change.toFixed(2)}%</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function searchAssets() {
+  const q = document.getElementById('search-input').value.toUpperCase();
+  if (q.length < 1) {
+    document.getElementById('search-results').style.display = 'none';
+    return;
+  }
+  const matches = ASSETS.filter(a =>
+    a.ticker.toUpperCase().includes(q) || a.name.toUpperCase().includes(q)
+  ).slice(0, 8);
+
+  if (matches.length === 0) {
+    document.getElementById('search-results').innerHTML = `<div class="search-result-item">Drücke + um "${q}" als eigenen Ticker zu laden</div>`;
+  } else {
+    document.getElementById('search-results').innerHTML = matches.map(a => {
+      const d = assetData[a.ticker] || {};
+      return `<div class="search-result-item" onclick="selectAsset('${a.ticker}'); document.getElementById('search-input').value=''; document.getElementById('search-results').style.display='none';">
+        <div><strong>${a.name}</strong><br><span style="font-family:var(--mono); font-size:10px; color:var(--muted2)">${a.ticker}</span></div>
+        ${d.price ? '<span style="font-family:var(--mono); color:var(--cyan)">'+d.price.toFixed(2)+'</span>' : ''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('search-results').style.display = 'block';
+}
+
+async function addCustomTicker() {
+  const t = document.getElementById('search-input').value.toUpperCase().trim();
+  if (!t) return;
+  if (ASSETS.find(a => a.ticker === t)) {
+    selectAsset(t);
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-results').style.display = 'none';
+    return;
+  }
+  const newA = { ticker: t, name: t, cat: 'custom', macro: 'unknown' };
+  ASSETS.push(newA);
+  STOOQ_MAP[t] = t.toLowerCase().replace('.', '.');
+  await fetchPrice(newA);
+  selectAsset(t);
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').style.display = 'none';
+}
+
+function selectAsset(t) {
+  currentAsset = ASSETS.find(a => a.ticker === t) || ASSETS[0];
+  renderAssets();
+  updateSelected();
+  rankStrategies();
+  resetBuilder();
+  renderTA();
+}
+
+function updateSelected() {
+  const a = currentAsset;
+  const d = assetData[a.ticker] || { price: 100, change: 0, high52: 120, low52: 80, vola52: 25 };
+  document.getElementById('sel-name').textContent = a.name;
+  document.getElementById('sel-ticker').textContent = a.ticker + ' · ' + a.cat.toUpperCase();
+  document.getElementById('sel-price').textContent = d.price.toFixed(2);
+  const chg = document.getElementById('sel-change');
+  chg.textContent = (d.change >= 0 ? '+' : '') + d.change.toFixed(2) + '%';
+  chg.className = 'sel-change ' + (d.change >= 0 ? 'up' : 'down');
+
+  document.getElementById('m-high').textContent = d.high52.toFixed(2);
+  document.getElementById('m-low').textContent = d.low52.toFixed(2);
+
+  const vola = d.vola52 || 25;
+  const volaEl = document.getElementById('m-vola');
+  volaEl.textContent = vola.toFixed(0) + '%';
+  volaEl.style.color = vola > 40 ? 'var(--red)' : vola > 25 ? 'var(--yellow)' : 'var(--green)';
+
+  const range = ((d.high52 - d.low52) / d.price) * 100;
+  document.getElementById('m-range').textContent = range.toFixed(0) + '%';
+}
+
+// ============ STRATEGY RANKING ============
+function setMarketView(v) {
+  marketView = v;
+  document.querySelectorAll('.mv-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.mv-btn.' + v).classList.add('active');
+  rankStrategies();
+}
+
+function calcScore(strat, view, move, vol, time) {
+  let score = 50;
+  if (strat.bestFor.includes(view)) score += 30;
+  else if (!strat.bestFor.includes(view)) score -= 20;
+  if (strat.id.includes('straddle') && move > 20) score += 15;
+  if (strat.id.includes('strangle') && strat.id.includes('long') && move > 20) score += 15;
+  if (strat.id === 'short-strangle' && move < 10) score += 15;
+  if (strat.id.includes('condor') && move < 8) score += 20;
+  if ((strat.id === 'long-call' || strat.id === 'long-put') && move > 15) score += 10;
+  score += strat.volBenefit * vol * 5;
+  if (time < 2 && strat.timeDecay > 0) score += 10;
+  if (time > 6 && strat.timeDecay < 0) score += 8;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function rankStrategies() {
+  const move = +document.getElementById('move').value;
+  const vol = +document.getElementById('vol').value;
+  const time = +document.getElementById('time').value;
+  const cap = +document.getElementById('capital').value || 500;
+  document.getElementById('move-v').textContent = move + '%';
+  document.getElementById('vol-v').textContent = ['Stark sinkend', 'Sinkend', 'Bleibt gleich', 'Steigend', 'Stark steigend'][vol+2];
+  document.getElementById('time-v').textContent = time;
+
+  const d = assetData[currentAsset.ticker] || { price: 100 };
+  const curr = d.price;
+
+  const ranked = STRATEGIES.map(s => {
+    const score = calcScore(s, marketView, move, vol, time);
+    return { ...s, score };
+  }).sort((a, b) => b.score - a.score);
+
+  document.getElementById('strategy-list').innerHTML = ranked.map((s, i) => `
+    <div class="strategy-card ${i === 0 ? 'recommended' : ''}">
+      <div class="strat-head">
+        <div class="strat-emoji">${s.emoji}</div>
+        <div class="strat-info">
+          <div class="strat-name">${s.name}</div>
+          <div class="strat-desc">${s.desc}</div>
+        </div>
+        <div class="score-circle ${s.score >= 70 ? 'sc-high' : s.score >= 40 ? 'sc-mid' : 'sc-low'}">${s.score}</div>
+      </div>
+      <div class="strat-explain">${s.explain}</div>
+    </div>`).join('');
+}
+
+// ============ TRADE BUILDER ============
+function addLeg(side, type) {
+  const d = assetData[currentAsset.ticker] || { price: 100 };
+  const curr = d.price;
+  const defStrike = type === 'call'
+    ? (side === 'long' ? curr * 1.05 : curr * 1.10)
+    : (side === 'long' ? curr * 0.95 : curr * 0.90);
+
+  legs.push({
+    id: ++legIdCounter,
+    side, type,
+    strike: Math.round(defStrike * 100) / 100,
+    premium: curr * 0.03,
+    qty: 100,
+    ratio: 0.1
+  });
+  renderLegs();
+  calcBuilder();
+}
+
+function removeLeg(id) {
+  legs = legs.filter(l => l.id !== id);
+  renderLegs();
+  calcBuilder();
+}
+
+function updateLeg(id, field, val) {
+  const leg = legs.find(l => l.id === id);
+  if (leg) {
+    leg[field] = parseFloat(val) || 0;
+    calcBuilder();
+  }
+}
+
+function renderLegs() {
+  const html = legs.map(l => {
+    const dirIcon = l.side === 'long' ? '+' : '−';
+    const typeLabel = l.type.toUpperCase();
+    return `<div class="leg-card ${l.side}">
+      <div class="leg-head">
+        <div class="leg-title">${dirIcon} ${l.side.toUpperCase()} ${typeLabel}</div>
+        <button class="leg-remove" onclick="removeLeg(${l.id})">✕</button>
+      </div>
+      <div class="leg-grid">
+        <div>
+          <div class="leg-label">STRIKE</div>
+          <input type="number" class="leg-input" value="${l.strike}" step="0.01" oninput="updateLeg(${l.id}, 'strike', this.value)">
+        </div>
+        <div>
+          <div class="leg-label">PRÄMIE (€)</div>
+          <input type="number" class="leg-input" value="${l.premium.toFixed(2)}" step="0.01" oninput="updateLeg(${l.id}, 'premium', this.value)">
+        </div>
+        <div>
+          <div class="leg-label">STÜCKE</div>
+          <input type="number" class="leg-input" value="${l.qty}" step="1" oninput="updateLeg(${l.id}, 'qty', this.value)">
+        </div>
+        <div>
+          <div class="leg-label">VERHÄLTNIS</div>
+          <input type="number" class="leg-input" value="${l.ratio}" step="0.01" oninput="updateLeg(${l.id}, 'ratio', this.value)">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('legs-container').innerHTML = html || '<div style="text-align:center; padding:20px; color:var(--muted2); font-size:13px">Noch keine Beine. Klicke unten um anzufangen.</div>';
+}
+
+function resetBuilder() {
+  legs = [];
+  renderLegs();
+  const d = assetData[currentAsset.ticker] || { price: 100 };
+  const slider = document.getElementById('b-target');
+  slider.min = Math.round(d.price * 0.4);
+  slider.max = Math.round(d.price * 1.7);
+  slider.value = Math.round(d.price * 0.85);
+  calcBuilder();
+}
+
+function loadPreset(preset) {
+  legs = [];
+  legIdCounter = 0;
+  const d = assetData[currentAsset.ticker] || { price: 100 };
+  const c = d.price;
+
+  if (preset === 'bull-spread') {
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'short', type: 'call', strike: c*1.10, premium: c*0.015, qty: 100, ratio: 0.1 });
+  } else if (preset === 'bear-spread') {
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'put', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'short', type: 'put', strike: c*0.90, premium: c*0.015, qty: 100, ratio: 0.1 });
+  } else if (preset === 'straddle') {
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'put', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
+  }
+  renderLegs();
+  calcBuilder();
+}
+
+function legPayoff(leg, underlying) {
+  const intrinsic = leg.type === 'call'
+    ? Math.max(0, underlying - leg.strike) * leg.ratio
+    : Math.max(0, leg.strike - underlying) * leg.ratio;
+  const payoff = leg.side === 'long'
+    ? leg.qty * intrinsic - leg.qty * leg.premium
+    : leg.qty * leg.premium - leg.qty * intrinsic;
+  return payoff;
+}
+
+function totalPayoff(underlying) {
+  return legs.reduce((sum, l) => sum + legPayoff(l, underlying), 0);
+}
+
+function totalCost() {
+  return legs.reduce((sum, l) => sum + (l.side === 'long' ? l.qty * l.premium : -l.qty * l.premium), 0);
+}
+
+function calcBuilder() {
+  const target = +document.getElementById('b-target').value;
+  document.getElementById('b-target-v').textContent = target.toFixed(2);
+
+  if (legs.length === 0) {
+    document.getElementById('builder-result').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted2)">Füge erst Beine hinzu</div>';
+    document.getElementById('builder-scenarios').innerHTML = '';
+    drawBuilderChart(target);
+    return;
+  }
+
+  const cost = totalCost();
+  const payoff = totalPayoff(target);
+  const totalGain = payoff;
+  const ret = cost > 0 ? (totalGain / cost) * 100 : 0;
+
+  // Calc max gain/loss by sweeping price range
+  const d = assetData[currentAsset.ticker] || { price: 100 };
+  let maxG = -Infinity, maxL = Infinity;
+  for (let p = d.price * 0.1; p <= d.price * 3; p += d.price * 0.02) {
+    const pay = totalPayoff(p);
+    if (pay > maxG) maxG = pay;
+    if (pay < maxL) maxL = pay;
+  }
+
+  // Find breakevens
+  const breakevens = [];
+  let prevPay = totalPayoff(d.price * 0.1);
+  for (let p = d.price * 0.1; p <= d.price * 3; p += d.price * 0.005) {
+    const pay = totalPayoff(p);
+    if ((prevPay < 0 && pay >= 0) || (prevPay > 0 && pay <= 0)) {
+      breakevens.push(p);
+    }
+    prevPay = pay;
+  }
+
+  document.getElementById('builder-result').innerHTML = `
+    <div class="result-grid">
+      <div class="result-box"><div class="r-label">Netto Kosten</div><div class="r-val ${cost >= 0 ? 'neg' : 'pos'}">${cost >= 0 ? '-' : '+'}${Math.abs(cost).toFixed(0)}€</div></div>
+      <div class="result-box"><div class="r-label">Endwert @ ${target.toFixed(0)}</div><div class="r-val ${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${totalGain.toFixed(0)}€</div></div>
+      <div class="result-box"><div class="r-label">Max. Gewinn</div><div class="r-val pos">${maxG > 999999 ? '∞' : '+'+maxG.toFixed(0)+'€'}</div></div>
+      <div class="result-box"><div class="r-label">Max. Verlust</div><div class="r-val neg">${maxL < -999999 ? '-∞' : maxL.toFixed(0)+'€'}</div></div>
+      <div class="result-box big"><div class="r-label">Break-Even Punkte</div><div class="r-val warn-c">${breakevens.length === 0 ? 'kein Break-Even' : breakevens.map(b => b.toFixed(2)).join(' / ')}</div></div>
+    </div>`;
+
+  // Scenarios
+  const scens = [
+    { mult: 0.7, name: 'Crash -30%' },
+    { mult: 0.85, name: 'Korrektur -15%' },
+    { mult: 0.95, name: 'Leichter Rückgang' },
+    { mult: 1.0, name: 'Seitwärts' },
+    { mult: 1.05, name: 'Leichter Anstieg' },
+    { mult: 1.15, name: 'Anstieg +15%' },
+    { mult: 1.30, name: 'Rallye +30%' },
+  ];
+
+  let scenHtml = '';
+  scens.forEach(s => {
+    const p = d.price * s.mult;
+    const pay = totalPayoff(p);
+    const c = pay > 0 ? 'rgba(0,230,118,0.1)' : 'rgba(255,61,61,0.08)';
+    const tc = pay > 0 ? '#00e676' : '#ff6060';
+    const fillW = Math.min(95, Math.abs(pay) / Math.max(maxG, Math.abs(maxL), 1) * 100);
+    scenHtml += `<div class="scen-item" style="--w:${fillW}%; --c:${c}">
+      <div class="scen-left">
+        <div class="scen-name">${s.name}</div>
+        <div class="scen-sub">Kurs: ${p.toFixed(2)}</div>
+      </div>
+      <div class="scen-right">
+        <div class="scen-val" style="color:${tc}">${pay >= 0 ? '+' : ''}${pay.toFixed(0)}€</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('builder-scenarios').innerHTML = scenHtml;
+
+  drawBuilderChart(target);
+}
+
+function drawBuilderChart(target) {
+  const canvas = document.getElementById('builder-chart');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 280;
+  ctx.scale(2, 1);
+  const W = canvas.offsetWidth / 2;
+  const H = 140;
+  ctx.clearRect(0, 0, W, H);
+
+  if (legs.length === 0) {
+    ctx.fillStyle = '#4a4a6a';
+    ctx.font = '11px IBM Plex Mono';
+    ctx.fillText('Kein Trade konfiguriert', W/2 - 60, H/2);
+    return;
+  }
+
+  const d = assetData[currentAsset.ticker] || { price: 100 };
+  const minP = d.price * 0.4;
+  const maxP = d.price * 1.7;
+
+  const prices = [];
+  for (let p = minP; p <= maxP; p += (maxP - minP) / 80) prices.push(p);
+  const vals = prices.map(p => totalPayoff(p));
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals, 0);
+  const range = (maxV - minV) || 1;
+
+  const toX = p => ((p - minP) / (maxP - minP)) * (W - 24) + 12;
+  const toY = v => H - 16 - ((v - minV) / range) * (H - 32);
+  const z = toY(0);
+
+  // Zero line
+  ctx.strokeStyle = '#252540';
+  ctx.setLineDash([3, 3]);
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(12, z); ctx.lineTo(W - 12, z); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Profit fill
+  ctx.beginPath();
+  prices.forEach((p, i) => {
+    const x = toX(p), y = Math.min(toY(vals[i]), z);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(toX(prices[prices.length-1]), z);
+  ctx.lineTo(toX(prices[0]), z);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,230,118,0.1)';
+  ctx.fill();
+
+  // Loss fill
+  ctx.beginPath();
+  prices.forEach((p, i) => {
+    const x = toX(p), y = Math.max(toY(vals[i]), z);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(toX(prices[prices.length-1]), z);
+  ctx.lineTo(toX(prices[0]), z);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,61,61,0.08)';
+  ctx.fill();
+
+  // Main line
+  ctx.beginPath();
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  prices.forEach((p, i) => {
+    i === 0 ? ctx.moveTo(toX(p), toY(vals[i])) : ctx.lineTo(toX(p), toY(vals[i]));
+  });
+  ctx.stroke();
+
+  // Current price marker
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(toX(d.price), 5); ctx.lineTo(toX(d.price), H-5);
+  ctx.stroke();
+
+  // Target marker
+  ctx.strokeStyle = 'rgba(255,204,0,0.5)';
+  ctx.beginPath();
+  ctx.moveTo(toX(target), 5); ctx.lineTo(toX(target), H-5);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Dots
+  ctx.beginPath(); ctx.arc(toX(d.price), toY(totalPayoff(d.price)), 4, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(toX(target), toY(totalPayoff(target)), 5, 0, Math.PI*2); ctx.fillStyle = '#ffcc00'; ctx.fill();
+
+  // Labels
+  ctx.font = '9px IBM Plex Mono';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('Jetzt ' + d.price.toFixed(2), toX(d.price) + 5, 14);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillText('Ziel ' + target.toFixed(2), toX(target) + 5, 28);
+  ctx.fillStyle = '#4a4a6a';
+  ctx.fillText('€', 5, 14);
+}
+
+// ============ TECHNICAL ANALYSIS ============
+function calcSMA(data, period) {
+  if (data.length < period) return null;
+  const slice = data.slice(-period);
+  return slice.reduce((a,b) => a+b, 0) / period;
+}
+
+function calcRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    const change = data[i] - data[i-1];
+    if (change > 0) gains += change;
+    else losses -= change;
+  }
+  const avgGain = gains / period;
+  const avgLoss = losses / period;
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+function calcMACD(data) {
+  const ema12 = calcEMA(data, 12);
+  const ema26 = calcEMA(data, 26);
+  if (ema12 === null || ema26 === null) return { macd: 0, signal: 0, hist: 0 };
+  const macd = ema12 - ema26;
+  return { macd, signal: macd * 0.9, hist: macd * 0.1 };
+}
+
+function calcEMA(data, period) {
+  if (data.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = data.slice(0, period).reduce((a,b) => a+b, 0) / period;
+  for (let i = period; i < data.length; i++) {
+    ema = data[i] * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+function renderTA() {
+  const d = assetData[currentAsset.ticker];
+  if (!d || !d.closes || d.closes.length < 30) {
+    document.getElementById('ta-summary-wrap').innerHTML = '<div class="warn">Nicht genug historische Daten verfügbar</div>';
+    document.getElementById('ta-indicators').innerHTML = '';
+    document.getElementById('ta-interpretation').innerHTML = '';
+    return;
+  }
+
+  const closes = d.closes;
+  const price = d.price;
+  const ma50 = calcSMA(closes, 50);
+  const ma200 = calcSMA(closes, 200) || calcSMA(closes, Math.min(200, closes.length-1));
+  const rsi = calcRSI(closes);
+  const macd = calcMACD(closes);
+  const positionInRange = ((price - d.low52) / (d.high52 - d.low52)) * 100;
+
+  // Signals
+  const ma50Signal = price > ma50 ? 'bull' : 'bear';
+  const ma200Signal = price > ma200 ? 'bull' : 'bear';
+  const rsiSignal = rsi > 70 ? 'bear' : rsi < 30 ? 'bull' : 'neutral';
+  const macdSignal = macd.macd > 0 ? 'bull' : 'bear';
+  const rangeSignal = positionInRange > 75 ? 'bear' : positionInRange < 25 ? 'bull' : 'neutral';
+
+  // Overall sentiment
+  const signals = [ma50Signal, ma200Signal, rsiSignal, macdSignal, rangeSignal];
+  const bullCount = signals.filter(s => s === 'bull').length;
+  const bearCount = signals.filter(s => s === 'bear').length;
+
+  let overall, overallEmoji, overallTitle;
+  if (bullCount > bearCount + 1) { overall = 'bull'; overallEmoji = '📈'; overallTitle = 'BULLISH'; }
+  else if (bearCount > bullCount + 1) { overall = 'bear'; overallEmoji = '📉'; overallTitle = 'BEARISH'; }
+  else { overall = 'neutral'; overallEmoji = '⚖️'; overallTitle = 'NEUTRAL'; }
+
+  document.getElementById('ta-summary-wrap').innerHTML = `
+    <div class="ta-summary ${overall}">
+      <div class="ta-summary-emoji">${overallEmoji}</div>
+      <div class="ta-summary-title">${overallTitle}</div>
+      <div style="font-family:var(--mono); font-size:11px; color:var(--muted2); margin-top:6px">
+        ${bullCount} Bullish · ${bearCount} Bearish · ${5-bullCount-bearCount} Neutral
+      </div>
+    </div>`;
+
+  document.getElementById('ta-indicators').innerHTML = `
+    <div class="ta-card">
+      <div class="ta-name">RSI (14)</div>
+      <div class="ta-val">${rsi.toFixed(1)}</div>
+      <div class="ta-signal ${rsiSignal}">${rsi > 70 ? '🔴 ÜBERKAUFT' : rsi < 30 ? '🟢 ÜBERVERKAUFT' : '🟡 NEUTRAL'}</div>
+    </div>
+    <div class="ta-card">
+      <div class="ta-name">MA 50</div>
+      <div class="ta-val">${ma50.toFixed(2)}</div>
+      <div class="ta-signal ${ma50Signal}">${price > ma50 ? '🟢 KURS DARÜBER' : '🔴 KURS DARUNTER'}</div>
+    </div>
+    <div class="ta-card">
+      <div class="ta-name">MA 200</div>
+      <div class="ta-val">${ma200.toFixed(2)}</div>
+      <div class="ta-signal ${ma200Signal}">${price > ma200 ? '🟢 LANGFRIST AUFTREND' : '🔴 LANGFRIST ABTREND'}</div>
+    </div>
+    <div class="ta-card">
+      <div class="ta-name">MACD</div>
+      <div class="ta-val">${macd.macd.toFixed(2)}</div>
+      <div class="ta-signal ${macdSignal}">${macd.macd > 0 ? '🟢 POSITIV' : '🔴 NEGATIV'}</div>
+    </div>
+    <div class="ta-card">
+      <div class="ta-name">52W Position</div>
+      <div class="ta-val">${positionInRange.toFixed(0)}%</div>
+      <div class="ta-signal ${rangeSignal}">${positionInRange > 75 ? '🔴 NAHE HOCH' : positionInRange < 25 ? '🟢 NAHE TIEF' : '🟡 MITTE'}</div>
+    </div>
+    <div class="ta-card">
+      <div class="ta-name">Volatilität (annual.)</div>
+      <div class="ta-val">${(d.vola52 || 25).toFixed(1)}%</div>
+      <div class="ta-signal ${(d.vola52 || 25) > 40 ? 'bear' : 'neutral'}">${(d.vola52 || 25) > 40 ? '⚠️ HOCH' : '✓ NORMAL'}</div>
+    </div>`;
+
+  drawTAChart(closes, ma50, ma200);
+
+  // Interpretation
+  let interp = '<div style="font-size:13px; color:var(--muted2); line-height:1.7">';
+  interp += `<strong style="color:var(--text)">${currentAsset.name}</strong> zeigt aktuell folgendes Bild:<br><br>`;
+
+  if (rsi > 70) interp += `• <strong style="color:var(--red)">RSI bei ${rsi.toFixed(0)}</strong> – überkauft, Korrektur möglich.<br>`;
+  else if (rsi < 30) interp += `• <strong style="color:var(--green)">RSI bei ${rsi.toFixed(0)}</strong> – überverkauft, Rebound möglich.<br>`;
+  else interp += `• RSI bei ${rsi.toFixed(0)} im neutralen Bereich.<br>`;
+
+  if (ma50 && ma200 && ma50 > ma200) interp += `• <strong style="color:var(--green)">Golden Cross</strong> Setup: MA50 (${ma50.toFixed(2)}) > MA200 (${ma200.toFixed(2)}). Langfristig bullish.<br>`;
+  else if (ma50 && ma200) interp += `• <strong style="color:var(--red)">Death Cross</strong> Setup: MA50 (${ma50.toFixed(2)}) < MA200 (${ma200.toFixed(2)}). Vorsicht.<br>`;
+
+  if (positionInRange > 80) interp += `• Kurs bei <strong>${positionInRange.toFixed(0)}% der Range</strong> – sehr nahe am 52W-Hoch. Risk-Reward für Long ungünstig.<br>`;
+  else if (positionInRange < 20) interp += `• Kurs bei <strong>${positionInRange.toFixed(0)}% der Range</strong> – sehr nahe am 52W-Tief. Mögliche Bodenbildung.<br>`;
+
+  if ((d.vola52 || 25) > 40) interp += `• <strong style="color:var(--yellow)">⚠️ Volatilität sehr hoch (${(d.vola52||25).toFixed(0)}%)</strong> – Optionsscheine teuer. Bear/Bull Spread oder Iron Condor erwägen.<br>`;
+  else if ((d.vola52 || 25) < 15) interp += `• Volatilität niedrig – Optionen günstig. Long Calls/Puts attraktiv.<br>`;
+
+  interp += `<br><strong style="color:var(--cyan)">Empfehlung:</strong> `;
+  if (overall === 'bull') interp += `Tendenz Bullish → Long Call oder Bull Call Spread erwägen.`;
+  else if (overall === 'bear') interp += `Tendenz Bearish → Long Put oder Bear Put Spread erwägen.`;
+  else interp += `Tendenz Neutral → Iron Condor oder Strangle (je nach Vola-Erwartung) erwägen.`;
+  interp += '</div>';
+
+  document.getElementById('ta-interpretation').innerHTML = interp;
+}
+
+function drawTAChart(closes, ma50val, ma200val) {
+  const canvas = document.getElementById('ta-chart');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 320;
+  ctx.scale(2, 1);
+  const W = canvas.offsetWidth / 2;
+  const H = 160;
+  ctx.clearRect(0, 0, W, H);
+
+  if (closes.length < 2) return;
+
+  const minV = Math.min(...closes);
+  const maxV = Math.max(...closes);
+  const range = (maxV - minV) || 1;
+  const toX = i => (i / (closes.length - 1)) * (W - 24) + 12;
+  const toY = v => H - 14 - ((v - minV) / range) * (H - 28);
+
+  // Price line
+  ctx.beginPath();
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 1.5;
+  closes.forEach((c, i) => i === 0 ? ctx.moveTo(toX(i), toY(c)) : ctx.lineTo(toX(i), toY(c)));
+  ctx.stroke();
+
+  // MA50
+  if (ma50val) {
+    const ma50Series = [];
+    for (let i = 0; i < closes.length; i++) {
+      if (i >= 49) {
+        const slice = closes.slice(i - 49, i + 1);
+        ma50Series.push(slice.reduce((a,b) => a+b, 0) / 50);
+      } else {
+        ma50Series.push(null);
+      }
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = '#ffcc00';
+    ctx.lineWidth = 1;
+    let started = false;
+    ma50Series.forEach((v, i) => {
+      if (v !== null) {
+        if (!started) { ctx.moveTo(toX(i), toY(v)); started = true; }
+        else ctx.lineTo(toX(i), toY(v));
+      }
+    });
+    ctx.stroke();
+  }
+
+  // MA200
+  if (ma200val && closes.length >= 200) {
+    const ma200Series = [];
+    for (let i = 0; i < closes.length; i++) {
+      if (i >= 199) {
+        const slice = closes.slice(i - 199, i + 1);
+        ma200Series.push(slice.reduce((a,b) => a+b, 0) / 200);
+      } else {
+        ma200Series.push(null);
+      }
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = '#ff7c00';
+    ctx.lineWidth = 1;
+    let started = false;
+    ma200Series.forEach((v, i) => {
+      if (v !== null) {
+        if (!started) { ctx.moveTo(toX(i), toY(v)); started = true; }
+        else ctx.lineTo(toX(i), toY(v));
+      }
+    });
+    ctx.stroke();
+  }
+
+  // Current price dot
+  const lastX = toX(closes.length - 1);
+  const lastY = toY(closes[closes.length - 1]);
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#00e5ff';
+  ctx.fill();
+
+  // Labels
+  ctx.font = '9px IBM Plex Mono';
+  ctx.fillStyle = '#4a4a6a';
+  ctx.fillText('-1J', 12, H - 2);
+  ctx.fillText('Heute', W - 35, H - 2);
+}
+
+// ============ RISK ASSISTANT ============
+function calcRiskAssistant() {
+  const total = +document.getElementById('ra-total').value || 5000;
+  const prof = +document.getElementById('ra-prof').value;
+  const sl = +document.getElementById('ra-sl').value || 50;
+  const wr = +document.getElementById('ra-wr').value || 40;
+
+  document.getElementById('ra-prof-v').textContent = ['', 'Konservativ', 'Moderat', 'Aggressiv'][prof];
+
+  // Step 1: Risk per trade
+  const riskPct = [0, 1, 2, 5][prof];
+  const riskEuro = total * (riskPct / 100);
+
+  // Step 2: Max position size
+  const positionSize = riskEuro / (sl / 100);
+
+  // Step 3: Trades to ruin (Risk of Ruin)
+  // Simplified: how many losses to lose 50% of capital
+  const lossesToHalfCapital = Math.log(0.5) / Math.log(1 - riskPct/100);
+
+  // Step 4: Expected value per trade (assume 200% win, 100% loss)
+  const winProb = wr / 100;
+  const lossProb = 1 - winProb;
+  const expectedValue = (winProb * 2 - lossProb * 1) * riskEuro;
+
+  document.getElementById('ra-result').innerHTML = `
+    <div class="risk-step">
+      <div class="risk-step-num">1</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Risiko pro Trade</div>
+        <div class="risk-step-formula">Kapital × Risiko% = ${total}€ × ${riskPct}%</div>
+        <div class="risk-step-result">${riskEuro.toFixed(0)}€</div>
+      </div>
+    </div>
+    <div class="risk-step">
+      <div class="risk-step-num">2</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Max. Positionsgröße</div>
+        <div class="risk-step-formula">Risiko / Stop-Loss% = ${riskEuro.toFixed(0)}€ / ${sl}%</div>
+        <div class="risk-step-result">${positionSize.toFixed(0)}€</div>
+      </div>
+    </div>
+    <div class="risk-step">
+      <div class="risk-step-num">3</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Halbe Pleite (50% Verlust)</div>
+        <div class="risk-step-formula">Anzahl Verlust-Trades nacheinander</div>
+        <div class="risk-step-result">~${Math.round(lossesToHalfCapital)} Trades</div>
+      </div>
+    </div>
+    <div class="risk-step">
+      <div class="risk-step-num">4</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Erwartungswert pro Trade</div>
+        <div class="risk-step-formula">(WinRate × 2 - LossRate × 1) × Risiko @ 2:1 R/R</div>
+        <div class="risk-step-result" style="color:${expectedValue >= 0 ? 'var(--green)' : 'var(--red)'}">${expectedValue >= 0 ? '+' : ''}${expectedValue.toFixed(0)}€</div>
+      </div>
+    </div>
+    <div style="padding:14px; background:linear-gradient(135deg, var(--s2), var(--s3)); border:1px solid var(--cyan); border-radius:10px; margin-top:14px">
+      <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:8px">DEINE EMPFEHLUNG</div>
+      <div style="font-size:14px; line-height:1.7">
+        Bei <strong>${total}€</strong> Gesamtkapital solltest du:<br>
+        • Maximal <strong style="color:var(--cyan)">${positionSize.toFixed(0)}€</strong> in einen Trade investieren<br>
+        • Stop-Loss bei <strong>-${sl}%</strong> setzen<br>
+        • Risiko pro Trade: <strong>${riskEuro.toFixed(0)}€</strong> (${riskPct}% des Kapitals)<br>
+        ${expectedValue < 0 ? '<br><strong style="color:var(--red)">⚠️ Erwartungswert negativ!</strong> Mit dieser Win-Rate verlierst du langfristig Geld.' : '<br><strong style="color:var(--green)">✓ Erwartungswert positiv</strong> – Strategy mathematisch profitabel.'}
+      </div>
+    </div>`;
+}
+
+// ============ QUIZ / KELLY / DRAWDOWN / TAX ============
+function answerQuiz(q, a) {
+  quizAnswers[q] = a;
+  const opts = document.querySelectorAll('.quiz-q')[q].querySelectorAll('.quiz-opt');
+  opts.forEach((o, i) => o.classList.toggle('selected', i === a-1));
+  if (quizAnswers.every(x => x > 0)) showProfile();
+}
+
+function showProfile() {
+  const total = quizAnswers.reduce((a,b) => a+b, 0);
+  let profile, emoji, title, text;
+  if (total <= 6) {
+    profile = 'conservative'; emoji = '🛡️'; title = 'KONSERVATIV';
+    text = 'Du bevorzugst Sicherheit. Empfohlen: Max. 1-2% Risiko/Trade, kleine Hebel (3-5x), Spreads statt nackte Optionen.';
+    document.getElementById('ra-prof').value = 1;
+  } else if (total <= 9) {
+    profile = 'moderate'; emoji = '⚖️'; title = 'MODERAT';
+    text = 'Balance aus Sicherheit und Chance. Empfohlen: 2-5% Risiko/Trade, mittlere Hebel (5-10x).';
+    document.getElementById('ra-prof').value = 2;
+  } else {
+    profile = 'aggressive'; emoji = '🚀'; title = 'AGGRESSIV';
+    text = 'Du suchst große Gewinne. WARNUNG: Hohe Verlustwahrscheinlichkeit. Max. 5-10% Risiko/Trade.';
+    document.getElementById('ra-prof').value = 3;
+  }
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('profile-result-wrap').style.display = 'block';
+  document.getElementById('profile-result').className = 'profile-result ' + profile;
+  document.getElementById('prof-emoji').textContent = emoji;
+  document.getElementById('prof-title').textContent = title;
+  document.getElementById('prof-text').textContent = text;
+  calcRiskAssistant();
+}
+
+function resetQuiz() {
+  quizAnswers = [0,0,0];
+  document.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('quiz-area').style.display = 'block';
+  document.getElementById('profile-result-wrap').style.display = 'none';
+}
+
+function calcKelly() {
+  const cap = +document.getElementById('kelly-cap').value || 1000;
+  const wr = +document.getElementById('kelly-wr').value / 100;
+  const winPct = +document.getElementById('kelly-win').value / 100;
+  const lossPct = +document.getElementById('kelly-loss').value / 100;
+  document.getElementById('kelly-wr-v').textContent = (wr*100).toFixed(0) + '%';
+  document.getElementById('kelly-win-v').textContent = (winPct*100).toFixed(0) + '%';
+  document.getElementById('kelly-loss-v').textContent = (lossPct*100).toFixed(0) + '%';
+  const b = winPct / lossPct;
+  const fk = (wr * b - (1 - wr)) / b;
+  const hk = fk / 2, qk = fk / 4;
+  let warn = '';
+  if (fk <= 0) warn = '<div class="danger">⚠️ Negative Kelly: Statistisch unrentabel!</div>';
+  else if (fk > 0.5) warn = '<div class="warn">⚠️ Kelly > 50% – sehr aggressiv.</div>';
+  document.getElementById('kelly-result').innerHTML = `${warn}
+    <div class="kelly-bar-wrap"><div class="kelly-bar" style="width:${Math.min(100, Math.max(15, fk*100*2))}%; background:var(--red)">FULL ${(Math.max(0, fk)*100).toFixed(0)}%</div></div>
+    <div class="kelly-bar-wrap"><div class="kelly-bar" style="width:${Math.min(100, Math.max(15, hk*100*2))}%; background:var(--yellow)">HALF ${(Math.max(0, hk)*100).toFixed(0)}%</div></div>
+    <div class="kelly-bar-wrap"><div class="kelly-bar" style="width:${Math.min(100, Math.max(15, qk*100*2))}%; background:var(--green)">QTR ${(Math.max(0, qk)*100).toFixed(0)}%</div></div>
+    <div class="result-grid" style="margin-top:14px">
+      <div class="result-box"><div class="r-label">Full</div><div class="r-val neg">${Math.max(0,fk*cap).toFixed(0)}€</div></div>
+      <div class="result-box"><div class="r-label">Half</div><div class="r-val warn-c">${Math.max(0,hk*cap).toFixed(0)}€</div></div>
+      <div class="result-box big"><div class="r-label">Quarter (empfohlen)</div><div class="r-val pos">${Math.max(0,qk*cap).toFixed(0)}€</div></div>
+    </div>`;
+}
+
+function calcDrawdown() {
+  const cap = +document.getElementById('dd-cap').value || 1000;
+  const risk = +document.getElementById('dd-risk').value;
+  const n = +document.getElementById('dd-n').value;
+  document.getElementById('dd-risk-v').textContent = risk + '%';
+  document.getElementById('dd-n-v').textContent = n;
+  let cur = cap, html = '';
+  for (let i = 1; i <= n; i++) {
+    cur *= (1 - risk/100);
+    const pct = ((cap - cur) / cap) * 100;
+    html += `<div class="drawdown-row">
+      <div class="dd-step">L${i}</div>
+      <div class="dd-bar"><div class="dd-fill" style="width:${Math.min(100, pct)}%"></div></div>
+      <div class="dd-val">${cur.toFixed(0)}€</div>
+    </div>`;
+  }
+  const finalLoss = ((cap - cur) / cap) * 100;
+  const recovery = ((cap / cur) - 1) * 100;
+  html += `<div class="result-grid" style="margin-top:14px">
+    <div class="result-box"><div class="r-label">Endkapital</div><div class="r-val neg">${cur.toFixed(0)}€</div></div>
+    <div class="result-box"><div class="r-label">Verlust</div><div class="r-val neg">-${finalLoss.toFixed(0)}%</div></div>
+    <div class="result-box big"><div class="r-label">Comeback nötig</div><div class="r-val warn-c">+${recovery.toFixed(0)}%</div></div>
+  </div>`;
+  document.getElementById('dd-result').innerHTML = html;
+}
+
+function calcTax() {
+  const gain = +document.getElementById('tax-gain').value || 0;
+  const free = +document.getElementById('tax-free').value;
+  const church = document.getElementById('tax-church').checked;
+  document.getElementById('tax-free-v').textContent = free + '€';
+  const FB = 1000;
+  const remFree = Math.max(0, FB - free);
+  const taxable = Math.max(0, gain - remFree);
+  const ke = taxable * 0.25;
+  const so = ke * 0.055;
+  const ki = church ? ke * 0.09 : 0;
+  const tot = ke + so + ki;
+  const net = gain - tot;
+  document.getElementById('tax-result').innerHTML = `
+    <div class="result-grid">
+      <div class="result-box"><div class="r-label">Steuerpflichtig</div><div class="r-val neu">${taxable.toFixed(0)}€</div></div>
+      <div class="result-box"><div class="r-label">Steuern</div><div class="r-val neg">-${tot.toFixed(0)}€</div></div>
+      <div class="result-box big"><div class="r-label">Netto</div><div class="r-val pos">${net.toFixed(0)}€</div></div>
+    </div>
+    <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:10px">
+      KapESt: ${ke.toFixed(0)}€ · Soli: ${so.toFixed(0)}€${church ? ' · KiSt: '+ki.toFixed(0)+'€' : ''}<br>
+      Pauschbetrag genutzt: ${(FB-remFree).toFixed(0)}€/${FB}€
+    </div>`;
+}
+
+// ============ LIBRARY ============
+function renderLibrary() {
+  const html = STRATEGIES.map(s => `
+    <div class="lib-card">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px">
+        <div style="font-size:28px">${s.emoji}</div>
+        <div style="flex:1">
+          <div style="font-size:16px; font-weight:700">${s.name}</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--muted2); margin-top:2px">${s.desc}</div>
+        </div>
+        <div style="display:flex; gap:4px; flex-wrap:wrap">
+          ${s.bestFor.map(b => `<span class="lib-tag" style="background:rgba(0,229,255,0.1); color:var(--cyan)">${b.toUpperCase()}</span>`).join('')}
+        </div>
+      </div>
+
+      <div style="font-size:13px; color:var(--text); line-height:1.6; margin-bottom:8px">${s.explain}</div>
+
+      <div class="lib-section">
+        <div class="lib-section-title">🎯 WANN VERWENDEN?</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.7">${s.detailed.wann}</div>
+      </div>
+
+      <div class="lib-section">
+        <div class="lib-section-title">📋 KONKRETE BEISPIELE</div>
+        ${s.detailed.beispiele.map(b => `<div class="lib-scenario">${b}</div>`).join('')}
+      </div>
+
+      <div class="lib-section">
+        <div class="lib-section-title">⚠️ WARNUNG</div>
+        <div style="font-size:12px; color:rgba(255,204,0,0.9); line-height:1.7; padding:10px; background:rgba(255,204,0,0.04); border-radius:6px">${s.detailed.warnung}</div>
+      </div>
+
+      <div class="lib-section">
+        <div class="lib-section-title">📊 ECKDATEN</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.8">
+          • <strong style="color:var(--green)">Max. Gewinn:</strong> ${s.detailed.maxGain}<br>
+          • <strong style="color:var(--red)">Max. Verlust:</strong> ${s.detailed.maxLoss}<br>
+          • <strong style="color:var(--yellow)">Break-Even:</strong> ${s.detailed.breakeven}
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('library-content').innerHTML = html;
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['strategy','builder','ta','risk','library'][i] === t));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + t).classList.add('active');
+  if (t === 'ta') renderTA();
+}
+
+// Init
+loadAll();
+renderLibrary();
+calcKelly();
+calcDrawdown();
+calcTax();
+calcRiskAssistant();
+
+// Hide search when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-box-wrap')) {
+    document.getElementById('search-results').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
