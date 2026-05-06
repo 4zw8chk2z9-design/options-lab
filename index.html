@@ -1822,18 +1822,12 @@ document.addEventListener('click', e => {
     try {
       const ticker = currentAsset?.ticker || "AAPL";
 
-      document.getElementById("live-symbol").textContent = ticker;
-      document.getElementById("live-price").textContent = "Lädt...";
-      document.getElementById("live-change").textContent = "";
-
       const response = await fetch(`/api/quote?symbol=${encodeURIComponent(ticker)}`);
       const data = await response.json();
 
       const priceText = data.c ? "$" + data.c.toFixed(2) : "Keine Daten";
 const changeText = data.dp ? data.dp.toFixed(2) + "%" : "";
 
-document.getElementById("live-price").textContent = priceText;
-document.getElementById("live-change").textContent = changeText;
 
 document.getElementById("sel-price").textContent = priceText;
 document.getElementById("sel-change").textContent = changeText;
@@ -1846,7 +1840,6 @@ if (data.dp > 0) {
   document.getElementById("sel-change").className = "sel-change";
 }
     } catch (error) {
-      document.getElementById("live-price").textContent = "Fehler";
       console.error(error);
     }
   }
