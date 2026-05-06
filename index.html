@@ -1813,15 +1813,21 @@ document.addEventListener('click', e => {
 </script>
   <div id="live-quote-box" style="position:fixed;right:20px;bottom:20px;background:#111;color:white;padding:16px;border-radius:12px;font-family:Arial;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,.3)">
   <div style="font-size:12px;opacity:.7">LIVE TEST</div>
-  <div style="font-size:18px;font-weight:bold">AAPL</div>
+  <div id="live-symbol" style="font-size:18px;font-weight:bold">AAPL</div>
   <div id="live-price" style="font-size:24px;margin-top:6px">Lädt...</div>
   <div id="live-change" style="font-size:14px;margin-top:4px"></div>
 </div>
 
 <script>
-  async function loadLiveQuote() {
+  async function loadLiveQuoteForCurrentAsset() {
     try {
-      const response = await fetch("/api/quote?symbol=AAPL");
+      const ticker = currentAsset?.ticker || "AAPL";
+
+      document.getElementById("live-symbol").textContent = ticker;
+      document.getElementById("live-price").textContent = "Lädt...";
+      document.getElementById("live-change").textContent = "";
+
+      const response = await fetch(`/api/quote?symbol=${encodeURIComponent(ticker)}`);
       const data = await response.json();
 
       document.getElementById("live-price").textContent =
@@ -1835,8 +1841,8 @@ document.addEventListener('click', e => {
     }
   }
 
-  loadLiveQuote();
-  setInterval(loadLiveQuote, 60000);
+  loadLiveQuoteForCurrentAsset();
+  setInterval(loadLiveQuoteForCurrentAsset, 60000);
 </script>
 </body>
 </html>
