@@ -881,7 +881,7 @@ async function loadAll() {
     document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' TEILS LIVE';
   } else {
     document.getElementById('api-dot').classList.add('fail');
-    document.getElementById('api-text').textContent = 'DEMO';
+    <div class="status">● LIVE DATA</div>
   }
   renderAssets();
   selectAsset(currentAsset.ticker);
