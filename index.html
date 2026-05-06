@@ -1830,11 +1830,22 @@ document.addEventListener('click', e => {
       const response = await fetch(`/api/quote?symbol=${encodeURIComponent(ticker)}`);
       const data = await response.json();
 
-      document.getElementById("live-price").textContent =
-        data.c ? "$" + data.c.toFixed(2) : "Keine Daten";
+      const priceText = data.c ? "$" + data.c.toFixed(2) : "Keine Daten";
+const changeText = data.dp ? data.dp.toFixed(2) + "%" : "";
 
-      document.getElementById("live-change").textContent =
-        data.dp ? data.dp.toFixed(2) + "%" : "";
+document.getElementById("live-price").textContent = priceText;
+document.getElementById("live-change").textContent = changeText;
+
+document.getElementById("sel-price").textContent = priceText;
+document.getElementById("sel-change").textContent = changeText;
+
+if (data.dp > 0) {
+  document.getElementById("sel-change").className = "sel-change up";
+} else if (data.dp < 0) {
+  document.getElementById("sel-change").className = "sel-change down";
+} else {
+  document.getElementById("sel-change").className = "sel-change";
+}
     } catch (error) {
       document.getElementById("live-price").textContent = "Fehler";
       console.error(error);
