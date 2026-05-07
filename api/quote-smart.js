@@ -17,6 +17,13 @@ const INDEX_MAP = {
   "^FTSE": "FTSE.INDX"
 };
 
+const COMMODITY_MAP = {
+  "GC=F": "GLD",
+  "SI=F": "SLV",
+  "CL=F": "USO",
+  "BZ=F": "BNO"
+};
+
 const FINNHUB_TICKERS = [
   "AAPL","MSFT","NVDA","TSLA","GOOGL","META","AMZN",
   "NFLX","AMD","INTC","CRM","ORCL","ADBE",
@@ -26,11 +33,13 @@ const FINNHUB_TICKERS = [
 export default async function handler(req, res) {
   try {
     const symbol = req.query.symbol || "AAPL";
-
+const mappedCommodity = COMMODITY_MAP[symbol];
+const finalSymbol = mappedCommodity || symbol;
+    
     // 1. US Aktien + Rohstoff ETFs → Finnhub
-    if (FINNHUB_TICKERS.includes(symbol)) {
+ if (FINNHUB_TICKERS.includes(finalSymbol)) {
       const response = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${process.env.FINNHUB_API_KEY}`
+  `https://finnhub.io/api/v1/quote?symbol=${finalSymbol}&token=${process.env.FINNHUB_API_KEY}`
       );
       const data = await response.json();
 
