@@ -19,16 +19,16 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (data.error || data.message || data.code) {
-      return res.status(200).json({
-        requestedSymbol,
-        eodhdSymbol,
-        supported: false,
-        provider: "eodhd",
-        error: data.error || data.message || "No quote available",
-        raw: data
-      });
-    }
+if (data.error || data.message) {
+  return res.status(200).json({
+    requestedSymbol,
+    eodhdSymbol,
+    supported: false,
+    provider: "eodhd",
+    error: data.error || data.message || "No quote available",
+    raw: data
+  });
+}
 
     const price = data.close || data.previousClose || data.price;
 
