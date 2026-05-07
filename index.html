@@ -1882,89 +1882,191 @@ function renderTA() {
 function drawTAChart(closes, ma50val, ma200val) {
   const canvas = document.getElementById('ta-chart');
   const ctx = canvas.getContext('2d');
-  canvas.width = canvas.offsetWidth * 2;
-  canvas.height = 320;
-  ctx.scale(2, 1);
-  const W = canvas.offsetWidth / 2;
-  const H = 160;
-  ctx.clearRect(0, 0, W, H);
 
-  if (closes.length < 2) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.offsetWidth;
+  const cssHeight = 160;
 
-  const minV = Math.min(...closes);
-  const maxV = Math.max(...closes);
-  const range = (maxV - minV) || 1;
-  const toX = i => (i / (closes.length - 1)) * (W - 24) + 12;
-  const toY = v => H - 14 - ((v - minV) / range) * (H - 28);
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.height = cssHeight + 'px';
 
-  // Price line
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  if (!closes || closes.length < 2) return;
+
+  const W = cssWidth;
+  const H = cssHeight;
+
+  const padL = 46;
+  const padR = 16;
+  const padT = 14;
+  const padB = 24;
+
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const valuesForScale = [...closes];
+
+  function movingAverage(series, period) {
+    return series.map((_, i) => {
+      if (i < period - 1) return null;
+      const slice = series.slice(i - period + 1, i + 1);
+      return slice.reduce((a, b) => a + b, 0) / period;
+    });
+  }
+
+  const ma50Series = movingAverage(closes, 50);
+  const ma200Series = movingAverage(closes, 200);
+
+  ma50Series.forEach(v => { if (v !== null) valuesForScale.push(v); });
+  ma200Series.forEach(v => { if (v !== null) valuesForScale.push(v); });
+
+  let minV = Math.min(...valuesForScale);
+  let maxV = Math.max(...valuesForScale);
+
+  const padding = (maxV - minV) * 0.08 || maxV * 0.02 || 1;
+  minV -= padding;
+  maxV += padding;
+
+  const range = maxV - minV || 1;
+
+  const toX = i => padL + (i / (closes.length - 1)) * chartW;
+  const toY = v => padT + (1 - ((v - minV) / range)) * chartH;
+
+  // Hintergrundraster + Y-Achsenlabels
+  ctx.font = '9px IBM Plex Mono';
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * chartH;
+    const value = maxV - (i / 4) * range;
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.moveTo(padL, y);
+    ctx.lineTo(W - padR, y);
+    ctx.stroke();
+
+    ctx.fillStyle = '#6a6a8a';
+    ctx.textAlign = 'right';
+    ctx.fillText(value.toFixed(2), padL - 8, y + 3);
+  }
+
+  // X-Achsenlabels
+  ctx.fillStyle = '#6a6a8a';
+  ctx.textAlign = 'left';
+  ctx.fillText('-1J', padL, H - 6);
+
+  ctx.textAlign = 'center';
+  ctx.fillText('-6M', padL + chartW / 2, H - 6);
+
+  ctx.textAlign = 'right';
+  ctx.fillText('Heute', W - padR, H - 6);
+
+  function drawSeries(series, color, width, dashed = false) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+
+    if (dashed) {
+      ctx.setLineDash([4, 4]);
+    } else {
+      ctx.setLineDash([]);
+    }
+
+    let started = false;
+
+    series.forEach((v, i) => {
+      if (v === null || v === undefined || !Number.isFinite(v)) return;
+
+      const x = toX(i);
+      const y = toY(v);
+
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Kursfläche unter der Linie
+  const gradient = ctx.createLinearGradient(0, padT, 0, H - padB);
+  gradient.addColorStop(0, 'rgba(0,229,255,0.18)');
+  gradient.addColorStop(1, 'rgba(0,229,255,0.00)');
+
   ctx.beginPath();
-  ctx.strokeStyle = '#00e5ff';
-  ctx.lineWidth = 1.5;
-  closes.forEach((c, i) => i === 0 ? ctx.moveTo(toX(i), toY(c)) : ctx.lineTo(toX(i), toY(c)));
-  ctx.stroke();
+  closes.forEach((c, i) => {
+    const x = toX(i);
+    const y = toY(c);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(toX(closes.length - 1), H - padB);
+  ctx.lineTo(toX(0), H - padB);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
 
-  // MA50
-  if (ma50val) {
-    const ma50Series = [];
-    for (let i = 0; i < closes.length; i++) {
-      if (i >= 49) {
-        const slice = closes.slice(i - 49, i + 1);
-        ma50Series.push(slice.reduce((a,b) => a+b, 0) / 50);
-      } else {
-        ma50Series.push(null);
-      }
-    }
-    ctx.beginPath();
-    ctx.strokeStyle = '#ffcc00';
-    ctx.lineWidth = 1;
-    let started = false;
-    ma50Series.forEach((v, i) => {
-      if (v !== null) {
-        if (!started) { ctx.moveTo(toX(i), toY(v)); started = true; }
-        else ctx.lineTo(toX(i), toY(v));
-      }
-    });
-    ctx.stroke();
-  }
+  // Linien
+  drawSeries(closes, '#00e5ff', 2);
+  drawSeries(ma50Series, '#ffcc00', 1.5);
+  drawSeries(ma200Series, '#ff7c00', 1.5);
 
-  // MA200
-  if (ma200val && closes.length >= 200) {
-    const ma200Series = [];
-    for (let i = 0; i < closes.length; i++) {
-      if (i >= 199) {
-        const slice = closes.slice(i - 199, i + 1);
-        ma200Series.push(slice.reduce((a,b) => a+b, 0) / 200);
-      } else {
-        ma200Series.push(null);
-      }
-    }
-    ctx.beginPath();
-    ctx.strokeStyle = '#ff7c00';
-    ctx.lineWidth = 1;
-    let started = false;
-    ma200Series.forEach((v, i) => {
-      if (v !== null) {
-        if (!started) { ctx.moveTo(toX(i), toY(v)); started = true; }
-        else ctx.lineTo(toX(i), toY(v));
-      }
-    });
-    ctx.stroke();
-  }
-
-  // Current price dot
+  // Aktueller Kurs
+  const last = closes[closes.length - 1];
   const lastX = toX(closes.length - 1);
-  const lastY = toY(closes[closes.length - 1]);
+  const lastY = toY(last);
+
   ctx.beginPath();
-  ctx.arc(lastX, lastY, 4, 0, Math.PI*2);
+  ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
   ctx.fillStyle = '#00e5ff';
   ctx.fill();
 
-  // Labels
-  ctx.font = '9px IBM Plex Mono';
-  ctx.fillStyle = '#4a4a6a';
-  ctx.fillText('-1J', 12, H - 2);
-  ctx.fillText('Heute', W - 35, H - 2);
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(0,229,255,0.35)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.moveTo(padL, lastY);
+  ctx.lineTo(W - padR, lastY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Kurslabel rechts
+  const label = last.toFixed(2);
+  const labelW = ctx.measureText(label).width + 12;
+  const labelH = 18;
+  const labelX = W - padR - labelW;
+  const labelY = Math.max(padT, Math.min(lastY - labelH / 2, H - padB - labelH));
+
+  ctx.fillStyle = 'rgba(0,229,255,0.14)';
+  ctx.strokeStyle = 'rgba(0,229,255,0.45)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(labelX, labelY, labelW, labelH, 5);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = '10px IBM Plex Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, labelX + labelW / 2, labelY + 12);
+
+  // Kleine Performance-Info
+  const first = closes[0];
+  const perf = ((last / first - 1) * 100);
+  const perfText = (perf >= 0 ? '+' : '') + perf.toFixed(1) + '% / 1J';
+
+  ctx.fillStyle = perf >= 0 ? '#00e676' : '#ff3d3d';
+  ctx.font = '10px IBM Plex Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText(perfText, padL, padT + 10);
 }
 
 // ============ RISK ASSISTANT ============
