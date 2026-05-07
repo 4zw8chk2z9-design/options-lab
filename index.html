@@ -1184,12 +1184,39 @@ async function addCustomTicker() {
 
 function selectAsset(t) {
   currentAsset = ASSETS.find(a => a.ticker === t) || ASSETS[0];
+
   renderAssets();
-  updateSelected();
+
+  const cachedQuote = quoteCache[currentAsset.ticker];
+
+  if (cachedQuote) {
+    document.getElementById("sel-name").textContent = currentAsset.name;
+    document.getElementById("sel-ticker").textContent = currentAsset.ticker + " · " + currentAsset.cat.toUpperCase();
+
+    document.getElementById("sel-price").textContent = "$" + Number(cachedQuote.price).toFixed(2);
+
+    const changeText = cachedQuote.change !== null && cachedQuote.change !== undefined
+      ? (cachedQuote.change >= 0 ? "+" : "") + Number(cachedQuote.change).toFixed(2) + "%"
+      : "";
+
+    const chg = document.getElementById("sel-change");
+    chg.textContent = changeText;
+    chg.className = "sel-change " + (cachedQuote.change >= 0 ? "up" : "down");
+
+    if (!assetData[currentAsset.ticker]) {
+      assetData[currentAsset.ticker] = {};
+    }
+
+    assetData[currentAsset.ticker].price = Number(cachedQuote.price);
+    assetData[currentAsset.ticker].change = cachedQuote.change;
+  } else {
+    updateSelected();
+    loadLiveQuoteForCurrentAsset();
+  }
+
   rankStrategies();
   resetBuilder();
   renderTA();
-  loadLiveQuoteForCurrentAsset();
   loadHistoryForCurrentAsset();
 }
 
