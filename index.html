@@ -1430,7 +1430,6 @@ function calcScore(strat, view, move, vol, time) {
     rangePosition = ((price - low52) / (high52 - low52)) * 100;
   }
 
-  // 1. Automatische/Manuelle Marktmeinung
   if (strat.bestFor.includes(view)) {
     score += 30;
     reasons.push(`passt zur aktuellen Markteinschätzung: ${view === 'bull' ? 'bullish' : view === 'bear' ? 'bearish' : 'neutral'}`);
@@ -1438,7 +1437,6 @@ function calcScore(strat, view, move, vol, time) {
     score -= 20;
   }
 
-  // 2. Technische Analyse: MA50 / MA200
   if (ma50 && ma200) {
     const priceAboveMa50 = price > ma50;
     const priceBelowMa50 = price < ma50;
@@ -1476,7 +1474,6 @@ function calcScore(strat, view, move, vol, time) {
     }
   }
 
-  // 3. Erwartete Bewegung
   if (move > 20) {
     if (strat.id === 'long-straddle' || strat.id === 'long-strangle') {
       score += 18;
@@ -1504,7 +1501,6 @@ function calcScore(strat, view, move, vol, time) {
     }
   }
 
-  // 4. Historische Volatilität
   if (vola !== undefined && vola !== null) {
     if (vola > 35) {
       if (
@@ -1551,7 +1547,6 @@ function calcScore(strat, view, move, vol, time) {
     }
   }
 
-  // 5. Deine Vola-Erwartung
   score += strat.volBenefit * vol * 5;
 
   if (vol > 0 && strat.volBenefit > 0) {
@@ -1562,7 +1557,6 @@ function calcScore(strat, view, move, vol, time) {
     reasons.push(`Strategie profitiert von sinkender Volatilität`);
   }
 
-  // 6. Zeithorizont
   if (time < 2 && strat.timeDecay > 0) {
     score += 10;
     reasons.push(`kurzer Zeithorizont passt zu Strategien, die vom Zeitwertverfall profitieren`);
@@ -1573,7 +1567,6 @@ function calcScore(strat, view, move, vol, time) {
     reasons.push(`längerer Zeithorizont reduziert den Zeitdruck bei Long-Optionen`);
   }
 
-  // 7. 52W-Range
   if (rangePosition !== null) {
     if (rangePosition > 80) {
       if (strat.id === 'long-put' || strat.id === 'bear-put-spread' || strat.id === 'covered-call') {
@@ -1598,7 +1591,6 @@ function calcScore(strat, view, move, vol, time) {
     }
   }
 
-  // 8. Sehr riskante Strategie leicht abwerten
   if (strat.id === 'short-strangle') {
     score -= 10;
     reasons.push(`Short Strangle hat theoretisch unbegrenztes Verlustrisiko`);
@@ -1677,7 +1669,6 @@ function rankStrategies() {
   const ticker = currentAsset?.ticker;
   const d = assetData?.[ticker] || {};
   const closes = d.closes || [];
-  const price = getCurrentUnderlyingPrice();
 
   const ma50 = closes.length >= 50
     ? closes.slice(-50).reduce((a, b) => a + b, 0) / 50
