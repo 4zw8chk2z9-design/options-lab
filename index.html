@@ -1406,6 +1406,7 @@ function setMarketView(v) {
 
 function calcScore(strat, view, move, vol, time) {
   let score = 50;
+  const reasons = [];
 
   const ticker = currentAsset?.ticker;
   const d = assetData?.[ticker] || {};
@@ -1429,44 +1430,83 @@ function calcScore(strat, view, move, vol, time) {
     rangePosition = ((price - low52) / (high52 - low52)) * 100;
   }
 
-  // 1. Manuelle Marktmeinung bleibt die Basis
-  if (strat.bestFor.includes(view)) score += 30;
-  else score -= 20;
+  // 1. Automatische/Manuelle Marktmeinung
+  if (strat.bestFor.includes(view)) {
+    score += 30;
+    reasons.push(`passt zur aktuellen Markteinschätzung: ${view === 'bull' ? 'bullish' : view === 'bear' ? 'bearish' : 'neutral'}`);
+  } else {
+    score -= 20;
+  }
 
-  // 2. Erwartete Bewegung
-  if (strat.id.includes('straddle') && move > 20) score += 15;
-  if (strat.id.includes('strangle') && strat.id.includes('long') && move > 20) score += 15;
-  if (strat.id === 'short-strangle' && move < 10) score += 15;
-  if (strat.id.includes('condor') && move < 8) score += 20;
-  if ((strat.id === 'long-call' || strat.id === 'long-put') && move > 15) score += 10;
-
-  // 3. Deine Vola-Erwartung
-  score += strat.volBenefit * vol * 5;
-
-  // 4. Zeithorizont
-  if (time < 2 && strat.timeDecay > 0) score += 10;
-  if (time > 6 && strat.timeDecay < 0) score += 8;
-
-  // 5. Echter technischer Trend aus MA50 / MA200
+  // 2. Technische Analyse: MA50 / MA200
   if (ma50 && ma200) {
-    const bullishTrend = price > ma50 && ma50 > ma200;
-    const bearishTrend = price < ma50 && ma50 < ma200;
+    const priceAboveMa50 = price > ma50;
+    const priceBelowMa50 = price < ma50;
+    const goldenCross = ma50 > ma200;
+    const deathCross = ma50 < ma200;
 
-    if (bullishTrend) {
-      if (strat.bestFor.includes('bull')) score += 12;
-      if (strat.bestFor.includes('bear')) score -= 12;
+    if (priceAboveMa50 && goldenCross) {
+      if (strat.bestFor.includes('bull')) {
+        score += 14;
+        reasons.push(`MA50 liegt über MA200 und der Kurs liegt über MA50, das spricht technisch für Aufwärtstrend`);
+      }
+      if (strat.bestFor.includes('bear')) {
+        score -= 12;
+      }
     }
 
-    if (bearishTrend) {
-      if (strat.bestFor.includes('bear')) score += 12;
-      if (strat.bestFor.includes('bull')) score -= 12;
+    if (priceBelowMa50 && deathCross) {
+      if (strat.bestFor.includes('bear')) {
+        score += 14;
+        reasons.push(`MA50 liegt unter MA200 und der Kurs liegt unter MA50, das spricht technisch für Abwärtstrend`);
+      }
+      if (strat.bestFor.includes('bull')) {
+        score -= 12;
+      }
+    }
+
+    if (priceAboveMa50 && strat.bestFor.includes('bull')) {
+      score += 5;
+      reasons.push(`aktueller Kurs liegt über dem MA50`);
+    }
+
+    if (priceBelowMa50 && strat.bestFor.includes('bear')) {
+      score += 5;
+      reasons.push(`aktueller Kurs liegt unter dem MA50`);
     }
   }
 
-  // 6. Historische Volatilität
+  // 3. Erwartete Bewegung
+  if (move > 20) {
+    if (strat.id === 'long-straddle' || strat.id === 'long-strangle') {
+      score += 18;
+      reasons.push(`du erwartest eine starke Bewegung von ${move}%`);
+    }
+
+    if (strat.id === 'long-call' || strat.id === 'long-put') {
+      score += 8;
+      reasons.push(`große erwartete Bewegung passt zu Long-Optionsstrategien`);
+    }
+
+    if (strat.id === 'iron-condor' || strat.id === 'short-strangle' || strat.id === 'covered-call') {
+      score -= 14;
+    }
+  }
+
+  if (move < 8) {
+    if (strat.id === 'iron-condor' || strat.id === 'short-strangle' || strat.id === 'covered-call') {
+      score += 14;
+      reasons.push(`du erwartest nur geringe Bewegung, das passt zu Prämien- oder Seitwärtsstrategien`);
+    }
+
+    if (strat.id === 'long-straddle' || strat.id === 'long-strangle') {
+      score -= 12;
+    }
+  }
+
+  // 4. Historische Volatilität
   if (vola !== undefined && vola !== null) {
     if (vola > 35) {
-      // Hohe Vola: Spreads und Prämienstrategien bevorzugen
       if (
         strat.id === 'bull-call-spread' ||
         strat.id === 'bear-put-spread' ||
@@ -1474,10 +1514,10 @@ function calcScore(strat, view, move, vol, time) {
         strat.id === 'covered-call' ||
         strat.id === 'cash-secured-put'
       ) {
-        score += 10;
+        score += 12;
+        reasons.push(`historische Volatilität ist hoch (${Number(vola).toFixed(0)}%), deshalb sind Spreads oder Prämienstrategien attraktiver`);
       }
 
-      // Hohe Vola: nackte Long-Optionen etwas schlechter
       if (
         strat.id === 'long-call' ||
         strat.id === 'long-put' ||
@@ -1485,21 +1525,21 @@ function calcScore(strat, view, move, vol, time) {
         strat.id === 'long-strangle'
       ) {
         score -= 8;
+        reasons.push(`historische Volatilität ist hoch, reine Long-Optionen können teuer sein`);
       }
     }
 
     if (vola < 18) {
-      // Niedrige Vola: Long-Optionen attraktiver
       if (
         strat.id === 'long-call' ||
         strat.id === 'long-put' ||
         strat.id === 'long-straddle' ||
         strat.id === 'long-strangle'
       ) {
-        score += 8;
+        score += 10;
+        reasons.push(`historische Volatilität ist niedrig (${Number(vola).toFixed(0)}%), Long-Optionen sind relativ attraktiver`);
       }
 
-      // Niedrige Vola: Prämienstrategien weniger attraktiv
       if (
         strat.id === 'iron-condor' ||
         strat.id === 'short-strangle' ||
@@ -1511,12 +1551,36 @@ function calcScore(strat, view, move, vol, time) {
     }
   }
 
+  // 5. Deine Vola-Erwartung
+  score += strat.volBenefit * vol * 5;
+
+  if (vol > 0 && strat.volBenefit > 0) {
+    reasons.push(`Strategie profitiert von steigender Volatilität`);
+  }
+
+  if (vol < 0 && strat.volBenefit < 0) {
+    reasons.push(`Strategie profitiert von sinkender Volatilität`);
+  }
+
+  // 6. Zeithorizont
+  if (time < 2 && strat.timeDecay > 0) {
+    score += 10;
+    reasons.push(`kurzer Zeithorizont passt zu Strategien, die vom Zeitwertverfall profitieren`);
+  }
+
+  if (time > 6 && strat.timeDecay < 0) {
+    score += 8;
+    reasons.push(`längerer Zeithorizont reduziert den Zeitdruck bei Long-Optionen`);
+  }
+
   // 7. 52W-Range
   if (rangePosition !== null) {
     if (rangePosition > 80) {
       if (strat.id === 'long-put' || strat.id === 'bear-put-spread' || strat.id === 'covered-call') {
         score += 8;
+        reasons.push(`Kurs liegt nahe am 52W-Hoch (${rangePosition.toFixed(0)}%), Rücksetzer- oder Prämienstrategien werden interessanter`);
       }
+
       if (strat.id === 'long-call') {
         score -= 8;
       }
@@ -1525,26 +1589,86 @@ function calcScore(strat, view, move, vol, time) {
     if (rangePosition < 20) {
       if (strat.id === 'long-call' || strat.id === 'bull-call-spread' || strat.id === 'cash-secured-put') {
         score += 8;
+        reasons.push(`Kurs liegt nahe am 52W-Tief (${rangePosition.toFixed(0)}%), Rebound-Strategien werden interessanter`);
       }
+
       if (strat.id === 'long-put') {
         score -= 8;
       }
     }
   }
 
-  // 8. Short Strangle leicht abwerten, weil sehr riskant
+  // 8. Sehr riskante Strategie leicht abwerten
   if (strat.id === 'short-strangle') {
     score -= 10;
+    reasons.push(`Short Strangle hat theoretisch unbegrenztes Verlustrisiko`);
   }
 
-  return Math.max(0, Math.min(100, Math.round(score)));
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    reasons: reasons.slice(0, 4)
+  };
+}
+
+function toggleStrategyDetails(id) {
+  const el = document.getElementById('strategy-details-' + id);
+  if (!el) return;
+
+  const isOpen = el.style.display === 'block';
+
+  document.querySelectorAll('.strategy-details').forEach(d => {
+    d.style.display = 'none';
+  });
+
+  el.style.display = isOpen ? 'none' : 'block';
+}
+
+function renderStrategyInfo(s) {
+  const d = s.detailed;
+  if (!d) return '';
+
+  return `
+    <div class="strategy-details" id="strategy-details-${s.id}" style="display:none; margin-top:14px; padding:16px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,0.03)">
+      <div style="font-family:var(--mono); font-size:11px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:10px">
+        📚 STRATEGIE-WISSEN
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-weight:800; color:var(--text); margin-bottom:6px">Geeignet, wenn</div>
+        <div style="color:var(--muted); line-height:1.7">${d.wann}</div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-weight:800; color:var(--text); margin-bottom:6px">Typische Anwendung</div>
+        <div style="display:grid; gap:8px">
+          ${d.beispiele.map(b => `
+            <div style="padding:10px 12px; background:var(--s3); border-left:3px solid var(--purple); border-radius:8px; color:var(--muted)">
+              ${b}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-weight:800; color:var(--yellow); margin-bottom:6px">Worauf du achten musst</div>
+        <div style="padding:10px 12px; background:rgba(255,204,0,0.07); border-radius:8px; color:var(--yellow)">
+          ${d.warnung}
+        </div>
+      </div>
+
+      <div style="font-family:var(--mono); font-size:11px; line-height:1.9; color:var(--muted)">
+        <div><strong style="color:var(--green)">Max. Gewinn:</strong> ${d.maxGain}</div>
+        <div><strong style="color:var(--red)">Max. Verlust:</strong> ${d.maxLoss}</div>
+        <div><strong style="color:var(--yellow)">Break-even:</strong> ${d.breakeven}</div>
+      </div>
+    </div>
+  `;
 }
 
 function rankStrategies() {
   const move = +document.getElementById('move').value;
   const vol = +document.getElementById('vol').value;
   const time = +document.getElementById('time').value;
-  const cap = +document.getElementById('capital').value || 500;
 
   document.getElementById('move-v').textContent = move + '%';
   document.getElementById('vol-v').textContent = ['Stark sinkend', 'Sinkend', 'Bleibt gleich', 'Steigend', 'Stark steigend'][vol + 2];
@@ -1566,29 +1690,32 @@ function rankStrategies() {
   const dataHint = closes.length >= 50
     ? `
       <div class="explain" style="margin-bottom:12px">
-        <div class="explain-title">📡 Datenbasis der Strategieauswahl</div>
+        <div class="explain-title">📡 Automatische Strategieauswahl</div>
         <p>
-          Kurs: <strong>${price.toFixed(2)}</strong>.
+          Die Empfehlung nutzt den aktuellen Kurs, MA50, MA200, historische Volatilität und die 52W-Range.
           ${ma50 !== null ? `MA50: <strong>${ma50.toFixed(2)}</strong>.` : ''}
           ${ma200 !== null ? `MA200: <strong>${ma200.toFixed(2)}</strong>.` : ''}
           ${d.vola52 !== undefined && d.vola52 !== null ? `Hist. Vola: <strong>${Number(d.vola52).toFixed(0)}%</strong>.` : ''}
-          ${d.high52 !== undefined && d.low52 !== undefined ? `52W-Range: <strong>${Number(d.low52).toFixed(2)} – ${Number(d.high52).toFixed(2)}</strong>.` : ''}
         </p>
       </div>
     `
     : `
       <div class="warn">
-        Für dieses Asset sind noch nicht genug historische Daten geladen. Das Ranking nutzt stärker deine manuelle Marktmeinung.
+        Für dieses Asset sind noch nicht genug historische Daten geladen. Die Empfehlung nutzt vorübergehend stärker deine manuelle Markteinschätzung.
       </div>
     `;
 
   const ranked = STRATEGIES.map(s => {
-    const score = calcScore(s, marketView, move, vol, time);
-    return { ...s, score };
+    const result = calcScore(s, marketView, move, vol, time);
+    return {
+      ...s,
+      score: result.score,
+      reasons: result.reasons
+    };
   }).sort((a, b) => b.score - a.score);
 
   document.getElementById('strategy-list').innerHTML = dataHint + ranked.map((s, i) => `
-    <div class="strategy-card ${i === 0 ? 'recommended' : ''}">
+    <div class="strategy-card ${i === 0 ? 'recommended' : ''}" onclick="toggleStrategyDetails('${s.id}')">
       <div class="strat-head">
         <div class="strat-emoji">${s.emoji}</div>
         <div class="strat-info">
@@ -1597,11 +1724,24 @@ function rankStrategies() {
         </div>
         <div class="score-circle ${s.score >= 70 ? 'sc-high' : s.score >= 40 ? 'sc-mid' : 'sc-low'}">${s.score}</div>
       </div>
+
       <div class="strat-explain">${s.explain}</div>
+
+      ${s.reasons && s.reasons.length
+        ? `<div style="margin-top:12px; padding:12px; background:rgba(0,229,255,0.05); border:1px solid rgba(0,229,255,0.18); border-radius:10px">
+            <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:1.3px; margin-bottom:6px">
+              WARUM DIESE EMPFEHLUNG?
+            </div>
+            <div style="font-size:13px; color:var(--muted); line-height:1.7">
+              ${s.reasons.map(r => `• ${r}`).join('<br>')}
+            </div>
+          </div>`
+        : ''}
+
+      ${renderStrategyInfo(s)}
     </div>
   `).join('');
 }
-
 // ============ TRADE BUILDER ============
 function addLeg(side, type) {
   const curr = getCurrentUnderlyingPrice();
