@@ -1222,24 +1222,65 @@ function selectAsset(t) {
 
 function updateSelected() {
   const a = currentAsset;
-  const d = assetData[a.ticker] || { price: 100, change: 0, high52: 120, low52: 80, vola52: 25 };
+  const d = assetData[a.ticker] || {};
+  const live = quoteCache[a.ticker];
+
   document.getElementById('sel-name').textContent = a.name;
   document.getElementById('sel-ticker').textContent = a.ticker + ' · ' + a.cat.toUpperCase();
-  document.getElementById('sel-price').textContent = d.price.toFixed(2);
+
+  const displayPrice = live?.price ?? d.price;
+  const displayChange = live?.change ?? d.change;
+
+  if (displayPrice !== undefined && displayPrice !== null) {
+    document.getElementById('sel-price').textContent = "$" + Number(displayPrice).toFixed(2);
+  } else {
+    document.getElementById('sel-price').textContent = "Lädt...";
+  }
+
   const chg = document.getElementById('sel-change');
-  chg.textContent = (d.change >= 0 ? '+' : '') + d.change.toFixed(2) + '%';
-  chg.className = 'sel-change ' + (d.change >= 0 ? 'up' : 'down');
 
-  document.getElementById('m-high').textContent = d.high52.toFixed(2);
-  document.getElementById('m-low').textContent = d.low52.toFixed(2);
+  if (displayChange !== undefined && displayChange !== null) {
+    chg.textContent = (Number(displayChange) >= 0 ? '+' : '') + Number(displayChange).toFixed(2) + '%';
+    chg.className = 'sel-change ' + (Number(displayChange) >= 0 ? 'up' : 'down');
+  } else {
+    chg.textContent = '';
+    chg.className = 'sel-change';
+  }
 
-  const vola = d.vola52 || 25;
+  if (d.high52 !== undefined && d.high52 !== null) {
+    document.getElementById('m-high').textContent = Number(d.high52).toFixed(2);
+  } else {
+    document.getElementById('m-high').textContent = "—";
+  }
+
+  if (d.low52 !== undefined && d.low52 !== null) {
+    document.getElementById('m-low').textContent = Number(d.low52).toFixed(2);
+  } else {
+    document.getElementById('m-low').textContent = "—";
+  }
+
+  const vola = d.vola52;
+
   const volaEl = document.getElementById('m-vola');
-  volaEl.textContent = vola.toFixed(0) + '%';
-  volaEl.style.color = vola > 40 ? 'var(--red)' : vola > 25 ? 'var(--yellow)' : 'var(--green)';
+  if (vola !== undefined && vola !== null) {
+    volaEl.textContent = Number(vola).toFixed(0) + '%';
+    volaEl.style.color = vola > 40 ? 'var(--red)' : vola > 25 ? 'var(--yellow)' : 'var(--green)';
+  } else {
+    volaEl.textContent = "—";
+    volaEl.style.color = 'var(--cyan)';
+  }
 
-  const range = ((d.high52 - d.low52) / d.price) * 100;
-  document.getElementById('m-range').textContent = range.toFixed(0) + '%';
+  if (
+    d.high52 !== undefined && d.high52 !== null &&
+    d.low52 !== undefined && d.low52 !== null &&
+    displayPrice !== undefined && displayPrice !== null &&
+    Number(d.high52) !== Number(d.low52)
+  ) {
+    const range = ((Number(displayPrice) - Number(d.low52)) / (Number(d.high52) - Number(d.low52))) * 100;
+    document.getElementById('m-range').textContent = range.toFixed(0) + '%';
+  } else {
+    document.getElementById('m-range').textContent = "—";
+  }
 }
 
 // ============ STRATEGY RANKING ============
