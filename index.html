@@ -1477,78 +1477,158 @@ function calcBuilder() {
   document.getElementById('b-target-v').textContent = target.toFixed(2);
 
   if (legs.length === 0) {
-    document.getElementById('builder-result').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted2)">Füge erst Beine hinzu</div>';
+    document.getElementById('builder-result').innerHTML =
+      '<div style="text-align:center; padding:20px; color:var(--muted2)">Füge erst Beine hinzu</div>';
     document.getElementById('builder-scenarios').innerHTML = '';
     drawBuilderChart(target);
     return;
   }
 
-  const cost = totalCost();
-  const payoff = totalPayoff(target);
-  const totalGain = payoff;
-  const ret = cost > 0 ? (totalGain / cost) * 100 : 0;
-
-  // Calc max gain/loss by sweeping price range
   const currentPrice = getCurrentUnderlyingPrice();
 
-let maxG = -Infinity, maxL = Infinity;
-for (let p = currentPrice * 0.1; p <= currentPrice * 3; p += currentPrice * 0.02) {
+  const cost = totalCost();
+  const payoffAtTarget = totalPayoff(target);
+  const returnOnCapital = cost > 0 ? (payoffAtTarget / cost) * 100 : null;
+
+  // Max Gewinn / Verlust über realistische Preisspanne suchen
+  let maxGain = -Infinity;
+  let maxLoss = Infinity;
+
+  const minPrice = Math.max(0.01, currentPrice * 0.05);
+  const maxPrice = currentPrice * 3;
+  const step = currentPrice * 0.005;
+
+  for (let p = minPrice; p <= maxPrice; p += step) {
     const pay = totalPayoff(p);
-    if (pay > maxG) maxG = pay;
-    if (pay < maxL) maxL = pay;
+    if (pay > maxGain) maxGain = pay;
+    if (pay < maxLoss) maxLoss = pay;
   }
 
-  // Find breakevens
+  // Break-even-Punkte suchen
   const breakevens = [];
-  let prevPay = totalPayoff(currentPrice * 0.1);
-for (let p = currentPrice * 0.1; p <= currentPrice * 3; p += currentPrice * 0.005)  {
+  let prevPrice = minPrice;
+  let prevPay = totalPayoff(prevPrice);
+
+  for (let p = minPrice + step; p <= maxPrice; p += step) {
     const pay = totalPayoff(p);
+
     if ((prevPay < 0 && pay >= 0) || (prevPay > 0 && pay <= 0)) {
-      breakevens.push(p);
+      const t = Math.abs(prevPay) / (Math.abs(prevPay) + Math.abs(pay));
+      const approxBE = prevPrice + (p - prevPrice) * t;
+      breakevens.push(approxBE);
     }
+
+    prevPrice = p;
     prevPay = pay;
   }
 
+  const nearestBreakeven = breakevens.length
+    ? breakevens.reduce((best, be) =>
+        Math.abs(be - currentPrice) < Math.abs(best - currentPrice) ? be : best
+      )
+    : null;
+
+  const requiredMove = nearestBreakeven
+    ? ((nearestBreakeven / currentPrice - 1) * 100)
+    : null;
+
+  const riskCapital = cost > 0 ? cost : Math.abs(maxLoss);
+  const chanceRisk = maxLoss < 0 && Number.isFinite(maxGain)
+    ? maxGain / Math.abs(maxLoss)
+    : null;
+
+  const costLabel = cost >= 0 ? 'Nettoeinsatz' : 'Nettogutschrift';
+  const costClass = cost >= 0 ? 'neg' : 'pos';
+
   document.getElementById('builder-result').innerHTML = `
     <div class="result-grid">
-      <div class="result-box"><div class="r-label">Netto Kosten</div><div class="r-val ${cost >= 0 ? 'neg' : 'pos'}">${cost >= 0 ? '-' : '+'}${Math.abs(cost).toFixed(0)}€</div></div>
-      <div class="result-box"><div class="r-label">Endwert @ ${target.toFixed(0)}</div><div class="r-val ${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${totalGain.toFixed(0)}€</div></div>
-      <div class="result-box"><div class="r-label">Max. Gewinn</div><div class="r-val pos">${maxG > 999999 ? '∞' : '+'+maxG.toFixed(0)+'€'}</div></div>
-      <div class="result-box"><div class="r-label">Max. Verlust</div><div class="r-val neg">${maxL < -999999 ? '-∞' : maxL.toFixed(0)+'€'}</div></div>
-      <div class="result-box big"><div class="r-label">Break-Even Punkte</div><div class="r-val warn-c">${breakevens.length === 0 ? 'kein Break-Even' : breakevens.map(b => b.toFixed(2)).join(' / ')}</div></div>
-    </div>`;
-
-  // Scenarios
-  const scens = [
-    { mult: 0.7, name: 'Crash -30%' },
-    { mult: 0.85, name: 'Korrektur -15%' },
-    { mult: 0.95, name: 'Leichter Rückgang' },
-    { mult: 1.0, name: 'Seitwärts' },
-    { mult: 1.05, name: 'Leichter Anstieg' },
-    { mult: 1.15, name: 'Anstieg +15%' },
-    { mult: 1.30, name: 'Rallye +30%' },
-  ];
-
-  let scenHtml = '';
-  scens.forEach(s => {
-    const p = d.price * s.mult;
-    const pay = totalPayoff(p);
-    const c = pay > 0 ? 'rgba(0,230,118,0.1)' : 'rgba(255,61,61,0.08)';
-    const tc = pay > 0 ? '#00e676' : '#ff6060';
-    const fillW = Math.min(95, Math.abs(pay) / Math.max(maxG, Math.abs(maxL), 1) * 100);
-    scenHtml += `<div class="scen-item" style="--w:${fillW}%; --c:${c}">
-      <div class="scen-left">
-        <div class="scen-name">${s.name}</div>
-        <div class="scen-sub">Kurs: ${p.toFixed(2)}</div>
+      <div class="result-box">
+        <div class="r-label">${costLabel}</div>
+        <div class="r-val ${costClass}">${cost >= 0 ? '-' : '+'}${Math.abs(cost).toFixed(0)}€</div>
       </div>
-      <div class="scen-right">
-        <div class="scen-val" style="color:${tc}">${pay >= 0 ? '+' : ''}${pay.toFixed(0)}€</div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('builder-scenarios').innerHTML = scenHtml;
 
+      <div class="result-box">
+        <div class="r-label">Ergebnis @ ${target.toFixed(2)}</div>
+        <div class="r-val ${payoffAtTarget >= 0 ? 'pos' : 'neg'}">${payoffAtTarget >= 0 ? '+' : ''}${payoffAtTarget.toFixed(0)}€</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Rendite auf Einsatz</div>
+        <div class="r-val ${returnOnCapital !== null && returnOnCapital >= 0 ? 'pos' : 'neg'}">
+          ${returnOnCapital !== null ? (returnOnCapital >= 0 ? '+' : '') + returnOnCapital.toFixed(0) + '%' : '—'}
+        </div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Benötigte Bewegung</div>
+        <div class="r-val warn-c">
+          ${requiredMove !== null ? (requiredMove >= 0 ? '+' : '') + requiredMove.toFixed(1) + '%' : '—'}
+        </div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Max. Gewinn</div>
+        <div class="r-val pos">${maxGain > 999999 ? '∞' : '+' + maxGain.toFixed(0) + '€'}</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Max. Verlust</div>
+        <div class="r-val neg">${maxLoss < -999999 ? '-∞' : maxLoss.toFixed(0) + '€'}</div>
+      </div>
+
+      <div class="result-box big">
+        <div class="r-label">Break-even</div>
+        <div class="r-val warn-c">
+          ${breakevens.length ? breakevens.map(b => b.toFixed(2)).join(' · ') : 'Kein Break-even in Range'}
+        </div>
+      </div>
+
+      <div class="result-box big">
+        <div class="r-label">Chance/Risiko</div>
+        <div class="r-val neu">
+          ${chanceRisk !== null && Number.isFinite(chanceRisk) ? chanceRisk.toFixed(2) + ' : 1' : 'nicht begrenzt / nicht sinnvoll'}
+        </div>
+      </div>
+    </div>
+
+    <div class="explain">
+      <div class="explain-title">🧠 Interpretation</div>
+      <p>
+        Aktueller Basiswert: <strong>${currentPrice.toFixed(2)}</strong>.
+        Zielkurs: <strong>${target.toFixed(2)}</strong>.
+        ${requiredMove !== null
+          ? `Der nächste Break-even liegt bei <strong>${nearestBreakeven.toFixed(2)}</strong>, dafür braucht der Basiswert ungefähr <strong>${requiredMove >= 0 ? '+' : ''}${requiredMove.toFixed(1)}%</strong> Bewegung.`
+          : `In der simulierten Preisspanne wurde kein Break-even gefunden.`}
+      </p>
+    </div>
+  `;
+
+  renderBuilderScenarios(currentPrice);
   drawBuilderChart(target);
+
+}
+
+  function renderBuilderScenarios(currentPrice) {
+  const scenarios = [-30, -20, -10, 0, 10, 20, 30];
+
+  document.getElementById('builder-scenarios').innerHTML = scenarios.map(pct => {
+    const price = currentPrice * (1 + pct / 100);
+    const result = totalPayoff(price);
+    const cls = result >= 0 ? 'pos' : 'neg';
+
+    return `
+      <div class="scen-item" style="--w:${Math.min(100, Math.abs(pct) * 2)}%; --c:${result >= 0 ? 'rgba(0,230,118,0.08)' : 'rgba(255,61,61,0.08)'}">
+        <div class="scen-left">
+          <div class="scen-name">${pct >= 0 ? '+' : ''}${pct}%</div>
+          <div class="scen-sub">Underlying: ${price.toFixed(2)}</div>
+        </div>
+        <div class="scen-right">
+          <div class="scen-val ${cls}" style="color:${result >= 0 ? 'var(--green)' : 'var(--red)'}">${result >= 0 ? '+' : ''}${result.toFixed(0)}€</div>
+          <div class="scen-pct">${currentPrice > 0 ? ((price / currentPrice - 1) * 100).toFixed(0) : 0}% vom aktuellen Kurs</div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function drawBuilderChart(target) {
