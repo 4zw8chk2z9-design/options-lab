@@ -1809,31 +1809,6 @@ function renderTA() {
   document.getElementById('ta-interpretation').innerHTML = interp;
 }
 
-  // Interpretation
-  let interp = '<div style="font-size:13px; color:var(--muted2); line-height:1.7">';
-  interp += `<strong style="color:var(--text)">${currentAsset.name}</strong> zeigt aktuell folgendes Bild:<br><br>`;
-
-  if (rsi > 70) interp += `• <strong style="color:var(--red)">RSI bei ${rsi.toFixed(0)}</strong> – überkauft, Korrektur möglich.<br>`;
-  else if (rsi < 30) interp += `• <strong style="color:var(--green)">RSI bei ${rsi.toFixed(0)}</strong> – überverkauft, Rebound möglich.<br>`;
-  else interp += `• RSI bei ${rsi.toFixed(0)} im neutralen Bereich.<br>`;
-
-  if (ma50 && ma200 && ma50 > ma200) interp += `• <strong style="color:var(--green)">Golden Cross</strong> Setup: MA50 (${ma50.toFixed(2)}) > MA200 (${ma200.toFixed(2)}). Langfristig bullish.<br>`;
-  else if (ma50 && ma200) interp += `• <strong style="color:var(--red)">Death Cross</strong> Setup: MA50 (${ma50.toFixed(2)}) < MA200 (${ma200.toFixed(2)}). Vorsicht.<br>`;
-
-  if (positionInRange > 80) interp += `• Kurs bei <strong>${positionInRange.toFixed(0)}% der Range</strong> – sehr nahe am 52W-Hoch. Risk-Reward für Long ungünstig.<br>`;
-  else if (positionInRange < 20) interp += `• Kurs bei <strong>${positionInRange.toFixed(0)}% der Range</strong> – sehr nahe am 52W-Tief. Mögliche Bodenbildung.<br>`;
-
-  if ((d.vola52 || 25) > 40) interp += `• <strong style="color:var(--yellow)">⚠️ Volatilität sehr hoch (${(d.vola52||25).toFixed(0)}%)</strong> – Optionsscheine teuer. Bear/Bull Spread oder Iron Condor erwägen.<br>`;
-  else if ((d.vola52 || 25) < 15) interp += `• Volatilität niedrig – Optionen günstig. Long Calls/Puts attraktiv.<br>`;
-
-  interp += `<br><strong style="color:var(--cyan)">Empfehlung:</strong> `;
-  if (overall === 'bull') interp += `Tendenz Bullish → Long Call oder Bull Call Spread erwägen.`;
-  else if (overall === 'bear') interp += `Tendenz Bearish → Long Put oder Bear Put Spread erwägen.`;
-  else interp += `Tendenz Neutral → Iron Condor oder Strangle (je nach Vola-Erwartung) erwägen.`;
-  interp += '</div>';
-
-  document.getElementById('ta-interpretation').innerHTML = interp;
-}
 
 function drawTAChart(closes, ma50val, ma200val) {
   const canvas = document.getElementById('ta-chart');
