@@ -21,6 +21,11 @@ const EODHD_STOCK_MAP = {
   "TTE.PA": "TTE.PA"
 };
 
+const INDEX_PROXY_MAP = {
+  "^FTSE": "EWU",
+  "^RUT": "IWM"
+};
+
 const INDEX_MAP = {
   "^GSPC": "GSPC.INDX",
   "^NDX": "NDX.INDX",
@@ -28,23 +33,18 @@ const INDEX_MAP = {
   "^GDAXI": "GDAXI.INDX",
   "^STOXX50E": "STOXX50E.INDX",
   "^N225": "N225.INDX",
-  "^VIX": "VIX.INDX",
+  "^VIX": "VIX.INDX"
 };
 
 const COMMODITY_MAP = {
-  // Rohstoff-Futures aus deiner Website → handelbare ETF/ETC-Proxies
-  "BZ=F": "BNO",   // Brent Oil Proxy
-  "CL=F": "USO",   // WTI Oil Proxy
-  "GC=F": "GLD",   // Gold Proxy
-  "SI=F": "SLV",   // Silver Proxy
-  "PL=F": "PPLT",  // Platinum Proxy
-  "PA=F": "PALL",  // Palladium Proxy
-  "HG=F": "CPER",  // Copper Proxy
-  "NG=F": "UNG"    // Natural Gas Proxy
-  const INDEX_PROXY_MAP = {
-  "^FTSE": "EWU",
-  "^RUT": "IWM"
-};
+  "BZ=F": "BNO",
+  "CL=F": "USO",
+  "GC=F": "GLD",
+  "SI=F": "SLV",
+  "PL=F": "PPLT",
+  "PA=F": "PALL",
+  "HG=F": "CPER",
+  "NG=F": "UNG"
 };
 
 const CRYPTO_MAP = {
@@ -134,19 +134,19 @@ export default async function handler(req, res) {
   try {
     const requestedSymbol = req.query.symbol || "AAPL";
 
-// 0. Index-Proxies → Finnhub ETFs
-if (INDEX_PROXY_MAP[requestedSymbol]) {
-  const result = await fetchFinnhubQuote(INDEX_PROXY_MAP[requestedSymbol]);
+    // 1. Index-Proxies über Finnhub
+    if (INDEX_PROXY_MAP[requestedSymbol]) {
+      const result = await fetchFinnhubQuote(INDEX_PROXY_MAP[requestedSymbol]);
 
-  return res.status(200).json({
-    requestedSymbol,
-    mappedSymbol: INDEX_PROXY_MAP[requestedSymbol],
-    assetType: "index-proxy",
-    ...result
-  });
-}
-    
-    // 1. Indizes → EODHD
+      return res.status(200).json({
+        requestedSymbol,
+        mappedSymbol: INDEX_PROXY_MAP[requestedSymbol],
+        assetType: "index-proxy",
+        ...result
+      });
+    }
+
+    // 2. Indizes über EODHD
     if (INDEX_MAP[requestedSymbol]) {
       const result = await fetchEodhdQuote(
         INDEX_MAP[requestedSymbol],
@@ -159,7 +159,7 @@ if (INDEX_PROXY_MAP[requestedSymbol]) {
       });
     }
 
-    // 2. Deutsche / europäische Aktien → EODHD
+    // 3. Deutsche / europäische Aktien über EODHD
     if (EODHD_STOCK_MAP[requestedSymbol]) {
       const result = await fetchEodhdQuote(
         EODHD_STOCK_MAP[requestedSymbol],
@@ -172,7 +172,7 @@ if (INDEX_PROXY_MAP[requestedSymbol]) {
       });
     }
 
-    // 3. Krypto → EODHD
+    // 4. Krypto über EODHD
     if (CRYPTO_MAP[requestedSymbol]) {
       const result = await fetchEodhdQuote(
         CRYPTO_MAP[requestedSymbol],
@@ -185,7 +185,7 @@ if (INDEX_PROXY_MAP[requestedSymbol]) {
       });
     }
 
-    // 4. Rohstoffe → ETF-Proxies über Finnhub
+    // 5. Rohstoffe über ETF-Proxies via Finnhub
     if (COMMODITY_MAP[requestedSymbol]) {
       const result = await fetchFinnhubQuote(COMMODITY_MAP[requestedSymbol]);
 
@@ -197,18 +197,18 @@ if (INDEX_PROXY_MAP[requestedSymbol]) {
       });
     }
 
-    // 5. Alles andere → Finnhub, vor allem US-Aktien
+    // 6. Alles andere über Finnhub, vor allem US-Aktien
     const result = await fetchFinnhubQuote(requestedSymbol);
 
     return res.status(200).json({
       requestedSymbol,
       ...result
     });
-
   } catch (error) {
     return res.status(500).json({
       supported: false,
-      error: "Quote-smart request failed"
+      error: "Quote-smart request failed",
+      details: error.message
     });
   }
 }
