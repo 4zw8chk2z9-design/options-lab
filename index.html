@@ -1293,16 +1293,137 @@ function setMarketView(v) {
 
 function calcScore(strat, view, move, vol, time) {
   let score = 50;
+
+  const ticker = currentAsset?.ticker;
+  const d = assetData?.[ticker] || {};
+  const closes = d.closes || [];
+  const price = getCurrentUnderlyingPrice();
+
+  const ma50 = closes.length >= 50
+    ? closes.slice(-50).reduce((a, b) => a + b, 0) / 50
+    : null;
+
+  const ma200 = closes.length >= 200
+    ? closes.slice(-200).reduce((a, b) => a + b, 0) / 200
+    : null;
+
+  const vola = d.vola52;
+  const high52 = d.high52;
+  const low52 = d.low52;
+
+  let rangePosition = null;
+  if (high52 && low52 && high52 !== low52) {
+    rangePosition = ((price - low52) / (high52 - low52)) * 100;
+  }
+
+  // 1. Manuelle Marktmeinung bleibt die Basis
   if (strat.bestFor.includes(view)) score += 30;
-  else if (!strat.bestFor.includes(view)) score -= 20;
+  else score -= 20;
+
+  // 2. Erwartete Bewegung
   if (strat.id.includes('straddle') && move > 20) score += 15;
   if (strat.id.includes('strangle') && strat.id.includes('long') && move > 20) score += 15;
   if (strat.id === 'short-strangle' && move < 10) score += 15;
   if (strat.id.includes('condor') && move < 8) score += 20;
   if ((strat.id === 'long-call' || strat.id === 'long-put') && move > 15) score += 10;
+
+  // 3. Deine Vola-Erwartung
   score += strat.volBenefit * vol * 5;
+
+  // 4. Zeithorizont
   if (time < 2 && strat.timeDecay > 0) score += 10;
   if (time > 6 && strat.timeDecay < 0) score += 8;
+
+  // 5. Echter technischer Trend aus MA50 / MA200
+  if (ma50 && ma200) {
+    const bullishTrend = price > ma50 && ma50 > ma200;
+    const bearishTrend = price < ma50 && ma50 < ma200;
+
+    if (bullishTrend) {
+      if (strat.bestFor.includes('bull')) score += 12;
+      if (strat.bestFor.includes('bear')) score -= 12;
+    }
+
+    if (bearishTrend) {
+      if (strat.bestFor.includes('bear')) score += 12;
+      if (strat.bestFor.includes('bull')) score -= 12;
+    }
+  }
+
+  // 6. Historische Volatilität
+  if (vola !== undefined && vola !== null) {
+    if (vola > 35) {
+      // Hohe Vola: Spreads und Prämienstrategien bevorzugen
+      if (
+        strat.id === 'bull-call-spread' ||
+        strat.id === 'bear-put-spread' ||
+        strat.id === 'iron-condor' ||
+        strat.id === 'covered-call' ||
+        strat.id === 'cash-secured-put'
+      ) {
+        score += 10;
+      }
+
+      // Hohe Vola: nackte Long-Optionen etwas schlechter
+      if (
+        strat.id === 'long-call' ||
+        strat.id === 'long-put' ||
+        strat.id === 'long-straddle' ||
+        strat.id === 'long-strangle'
+      ) {
+        score -= 8;
+      }
+    }
+
+    if (vola < 18) {
+      // Niedrige Vola: Long-Optionen attraktiver
+      if (
+        strat.id === 'long-call' ||
+        strat.id === 'long-put' ||
+        strat.id === 'long-straddle' ||
+        strat.id === 'long-strangle'
+      ) {
+        score += 8;
+      }
+
+      // Niedrige Vola: Prämienstrategien weniger attraktiv
+      if (
+        strat.id === 'iron-condor' ||
+        strat.id === 'short-strangle' ||
+        strat.id === 'covered-call' ||
+        strat.id === 'cash-secured-put'
+      ) {
+        score -= 6;
+      }
+    }
+  }
+
+  // 7. 52W-Range
+  if (rangePosition !== null) {
+    if (rangePosition > 80) {
+      if (strat.id === 'long-put' || strat.id === 'bear-put-spread' || strat.id === 'covered-call') {
+        score += 8;
+      }
+      if (strat.id === 'long-call') {
+        score -= 8;
+      }
+    }
+
+    if (rangePosition < 20) {
+      if (strat.id === 'long-call' || strat.id === 'bull-call-spread' || strat.id === 'cash-secured-put') {
+        score += 8;
+      }
+      if (strat.id === 'long-put') {
+        score -= 8;
+      }
+    }
+  }
+
+  // 8. Short Strangle leicht abwerten, weil sehr riskant
+  if (strat.id === 'short-strangle') {
+    score -= 10;
+  }
+
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
@@ -1316,12 +1437,44 @@ function rankStrategies() {
   document.getElementById('vol-v').textContent = ['Stark sinkend', 'Sinkend', 'Bleibt gleich', 'Steigend', 'Stark steigend'][vol + 2];
   document.getElementById('time-v').textContent = time;
 
+  const ticker = currentAsset?.ticker;
+  const d = assetData?.[ticker] || {};
+  const closes = d.closes || [];
+  const price = getCurrentUnderlyingPrice();
+
+  const ma50 = closes.length >= 50
+    ? closes.slice(-50).reduce((a, b) => a + b, 0) / 50
+    : null;
+
+  const ma200 = closes.length >= 200
+    ? closes.slice(-200).reduce((a, b) => a + b, 0) / 200
+    : null;
+
+  const dataHint = closes.length >= 50
+    ? `
+      <div class="explain" style="margin-bottom:12px">
+        <div class="explain-title">📡 Datenbasis der Strategieauswahl</div>
+        <p>
+          Kurs: <strong>${price.toFixed(2)}</strong>.
+          ${ma50 !== null ? `MA50: <strong>${ma50.toFixed(2)}</strong>.` : ''}
+          ${ma200 !== null ? `MA200: <strong>${ma200.toFixed(2)}</strong>.` : ''}
+          ${d.vola52 !== undefined && d.vola52 !== null ? `Hist. Vola: <strong>${Number(d.vola52).toFixed(0)}%</strong>.` : ''}
+          ${d.high52 !== undefined && d.low52 !== undefined ? `52W-Range: <strong>${Number(d.low52).toFixed(2)} – ${Number(d.high52).toFixed(2)}</strong>.` : ''}
+        </p>
+      </div>
+    `
+    : `
+      <div class="warn">
+        Für dieses Asset sind noch nicht genug historische Daten geladen. Das Ranking nutzt stärker deine manuelle Marktmeinung.
+      </div>
+    `;
+
   const ranked = STRATEGIES.map(s => {
     const score = calcScore(s, marketView, move, vol, time);
     return { ...s, score };
   }).sort((a, b) => b.score - a.score);
 
-  document.getElementById('strategy-list').innerHTML = ranked.map((s, i) => `
+  document.getElementById('strategy-list').innerHTML = dataHint + ranked.map((s, i) => `
     <div class="strategy-card ${i === 0 ? 'recommended' : ''}">
       <div class="strat-head">
         <div class="strat-emoji">${s.emoji}</div>
