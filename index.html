@@ -1822,7 +1822,7 @@ document.addEventListener('click', e => {
     try {
       const ticker = currentAsset?.ticker || "AAPL";
 
-      const response = await fetch(`/api/quote?symbol=${encodeURIComponent(ticker)}`);
+const response = await fetch(`/api/quote-smart?symbol=${encodeURIComponent(ticker)}`);
       const data = await response.json();
 
       const priceText = data.c ? "$" + data.c.toFixed(2) : "Keine Daten";
