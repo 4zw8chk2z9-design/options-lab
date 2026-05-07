@@ -1772,106 +1772,247 @@ function renderBuilderScenarios(currentPrice) {
     `;
   }).join('');
 }
-}
 
 function drawBuilderChart(target) {
   const canvas = document.getElementById('builder-chart');
   const ctx = canvas.getContext('2d');
-  canvas.width = canvas.offsetWidth * 2;
-  canvas.height = 280;
-  ctx.scale(2, 1);
-  const W = canvas.offsetWidth / 2;
-  const H = 140;
-  ctx.clearRect(0, 0, W, H);
+
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.offsetWidth;
+  const cssHeight = 180;
+
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.height = cssHeight + 'px';
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  const W = cssWidth;
+  const H = cssHeight;
+
+  const padL = 52;
+  const padR = 18;
+  const padT = 18;
+  const padB = 28;
 
   if (legs.length === 0) {
-    ctx.fillStyle = '#4a4a6a';
-    ctx.font = '11px IBM Plex Mono';
-    ctx.fillText('Kein Trade konfiguriert', W/2 - 60, H/2);
+    ctx.fillStyle = '#6a6a8a';
+    ctx.font = '12px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('Kein Trade konfiguriert', W / 2, H / 2);
     return;
   }
 
-  const d = assetData[currentAsset.ticker] || { price: 100 };
-  const minP = d.price * 0.4;
-  const maxP = d.price * 1.7;
+  const currentPrice = getCurrentUnderlyingPrice();
+
+  // Wichtige Preis-Punkte sammeln: aktueller Kurs, Ziel, Strikes, Break-even
+  const importantPrices = [currentPrice, target];
+
+  legs.forEach(leg => {
+    const strike = Number(leg.strike);
+    const premium = Number(leg.premium);
+    const ratio = Number(leg.ratio);
+
+    if (strike && Number.isFinite(strike)) {
+      importantPrices.push(strike);
+    }
+
+    if (legs.length === 1 && leg.side === 'long' && strike && premium && ratio) {
+      const be = leg.type === 'call'
+        ? strike + premium / ratio
+        : strike - premium / ratio;
+
+      importantPrices.push(be);
+    }
+  });
+
+  const minImportant = Math.min(...importantPrices);
+  const maxImportant = Math.max(...importantPrices);
+
+  // Chartbereich so wählen, dass Strike und Break-even sichtbar sind
+  let minP = Math.max(0.01, Math.min(currentPrice * 0.65, minImportant * 0.88));
+  let maxP = Math.max(currentPrice * 1.35, maxImportant * 1.12);
+
+  if (maxP <= minP) {
+    minP = currentPrice * 0.5;
+    maxP = currentPrice * 1.5;
+  }
 
   const prices = [];
-  for (let p = minP; p <= maxP; p += (maxP - minP) / 80) prices.push(p);
+  const steps = 140;
+
+  for (let i = 0; i <= steps; i++) {
+    prices.push(minP + (maxP - minP) * (i / steps));
+  }
+
   const vals = prices.map(p => totalPayoff(p));
-  const minV = Math.min(...vals);
-  const maxV = Math.max(...vals, 0);
-  const range = (maxV - minV) || 1;
 
-  const toX = p => ((p - minP) / (maxP - minP)) * (W - 24) + 12;
-  const toY = v => H - 16 - ((v - minV) / range) * (H - 32);
-  const z = toY(0);
+  let minV = Math.min(...vals, 0);
+  let maxV = Math.max(...vals, 0);
 
-  // Zero line
-  ctx.strokeStyle = '#252540';
-  ctx.setLineDash([3, 3]);
+  const valPad = (maxV - minV) * 0.12 || 10;
+  minV -= valPad;
+  maxV += valPad;
+
+  const valueRange = maxV - minV || 1;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const toX = p => padL + ((p - minP) / (maxP - minP)) * chartW;
+  const toY = v => padT + (1 - ((v - minV) / valueRange)) * chartH;
+
+  const zeroY = toY(0);
+
+  // Hintergrundraster
+  ctx.font = '9px IBM Plex Mono';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(12, z); ctx.lineTo(W - 12, z); ctx.stroke();
+
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * chartH;
+    const value = maxV - (i / 4) * valueRange;
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.moveTo(padL, y);
+    ctx.lineTo(W - padR, y);
+    ctx.stroke();
+
+    ctx.fillStyle = '#6a6a8a';
+    ctx.textAlign = 'right';
+    ctx.fillText(value.toFixed(0) + '€', padL - 8, y + 3);
+  }
+
+  // Null-Linie
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(255,255,255,0.20)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.moveTo(padL, zeroY);
+  ctx.lineTo(W - padR, zeroY);
+  ctx.stroke();
   ctx.setLineDash([]);
 
-  // Profit fill
+  // Gewinn-/Verlustflächen
   ctx.beginPath();
   prices.forEach((p, i) => {
-    const x = toX(p), y = Math.min(toY(vals[i]), z);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const x = toX(p);
+    const y = toY(Math.max(vals[i], 0));
+    if (i === 0) ctx.moveTo(x, zeroY);
+    ctx.lineTo(x, y);
   });
-  ctx.lineTo(toX(prices[prices.length-1]), z);
-  ctx.lineTo(toX(prices[0]), z);
+  ctx.lineTo(toX(prices[prices.length - 1]), zeroY);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(0,230,118,0.1)';
+  ctx.fillStyle = 'rgba(0,230,118,0.10)';
   ctx.fill();
 
-  // Loss fill
   ctx.beginPath();
   prices.forEach((p, i) => {
-    const x = toX(p), y = Math.max(toY(vals[i]), z);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const x = toX(p);
+    const y = toY(Math.min(vals[i], 0));
+    if (i === 0) ctx.moveTo(x, zeroY);
+    ctx.lineTo(x, y);
   });
-  ctx.lineTo(toX(prices[prices.length-1]), z);
-  ctx.lineTo(toX(prices[0]), z);
+  ctx.lineTo(toX(prices[prices.length - 1]), zeroY);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(255,61,61,0.08)';
+  ctx.fillStyle = 'rgba(255,61,61,0.10)';
   ctx.fill();
 
-  // Main line
+  // Payoff-Linie
   ctx.beginPath();
   ctx.strokeStyle = '#00e5ff';
   ctx.lineWidth = 2;
+
   prices.forEach((p, i) => {
-    i === 0 ? ctx.moveTo(toX(p), toY(vals[i])) : ctx.lineTo(toX(p), toY(vals[i]));
+    const x = toX(p);
+    const y = toY(vals[i]);
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   });
+
   ctx.stroke();
 
-  // Current price marker
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-  ctx.setLineDash([3, 3]);
-  ctx.beginPath();
-  ctx.moveTo(toX(d.price), 5); ctx.lineTo(toX(d.price), H-5);
-  ctx.stroke();
+  function drawVerticalMarker(price, label, color, dashed = true) {
+    if (!price || price < minP || price > maxP) return;
 
-  // Target marker
-  ctx.strokeStyle = 'rgba(255,204,0,0.5)';
-  ctx.beginPath();
-  ctx.moveTo(toX(target), 5); ctx.lineTo(toX(target), H-5);
-  ctx.stroke();
-  ctx.setLineDash([]);
+    const x = toX(price);
 
-  // Dots
-  ctx.beginPath(); ctx.arc(toX(d.price), toY(totalPayoff(d.price)), 4, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
-  ctx.beginPath(); ctx.arc(toX(target), toY(totalPayoff(target)), 5, 0, Math.PI*2); ctx.fillStyle = '#ffcc00'; ctx.fill();
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
 
-  // Labels
+    if (dashed) ctx.setLineDash([4, 4]);
+    else ctx.setLineDash([]);
+
+    ctx.moveTo(x, padT);
+    ctx.lineTo(x, H - padB);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = color;
+    ctx.font = '9px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, padT + 10);
+
+    ctx.beginPath();
+    ctx.arc(x, toY(totalPayoff(price)), 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  // Marker: aktueller Kurs
+  drawVerticalMarker(currentPrice, 'Jetzt ' + currentPrice.toFixed(2), '#e0e0f0');
+
+  // Marker: Zielkurs
+  drawVerticalMarker(Number(target), 'Ziel ' + Number(target).toFixed(2), '#ffcc00');
+
+  // Marker: Strikes
+  legs.forEach(leg => {
+    const strike = Number(leg.strike);
+    if (strike && Number.isFinite(strike)) {
+      drawVerticalMarker(
+        strike,
+        'Strike ' + strike.toFixed(2),
+        leg.type === 'call' ? '#00e676' : '#ff3d3d',
+        true
+      );
+    }
+  });
+
+  // Marker: Break-even bei einfachem Long Call/Put
+  if (legs.length === 1 && legs[0].side === 'long') {
+    const leg = legs[0];
+    const strike = Number(leg.strike);
+    const premium = Number(leg.premium);
+    const ratio = Number(leg.ratio);
+
+    if (strike && premium && ratio) {
+      const be = leg.type === 'call'
+        ? strike + premium / ratio
+        : strike - premium / ratio;
+
+      drawVerticalMarker(be, 'BE ' + be.toFixed(2), '#b15fff', true);
+    }
+  }
+
+  // X-Achse
+  ctx.fillStyle = '#6a6a8a';
   ctx.font = '9px IBM Plex Mono';
-  ctx.fillStyle = '#fff';
-  ctx.fillText('Jetzt ' + d.price.toFixed(2), toX(d.price) + 5, 14);
-  ctx.fillStyle = '#ffcc00';
-  ctx.fillText('Ziel ' + target.toFixed(2), toX(target) + 5, 28);
-  ctx.fillStyle = '#4a4a6a';
-  ctx.fillText('€', 5, 14);
+  ctx.textAlign = 'left';
+  ctx.fillText(minP.toFixed(2), padL, H - 8);
+
+  ctx.textAlign = 'center';
+  ctx.fillText(((minP + maxP) / 2).toFixed(2), padL + chartW / 2, H - 8);
+
+  ctx.textAlign = 'right';
+  ctx.fillText(maxP.toFixed(2), W - padR, H - 8);
+
+  // Titel oben links
+  ctx.fillStyle = '#6a6a8a';
+  ctx.textAlign = 'left';
+  ctx.font = '9px IBM Plex Mono';
+  ctx.fillText('Payoff bei Fälligkeit', padL, 10);
 }
 
 // ============ TECHNICAL ANALYSIS ============
