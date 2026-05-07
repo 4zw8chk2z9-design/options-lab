@@ -3073,6 +3073,7 @@ if (Number(data.changePercent) > 0) {
       document.getElementById("m-range").textContent = range !== null ? range.toFixed(0) + "%" : "—";
 
       renderTA();
+      autoSetMarketViewFromTA();
     }
   } catch (error) {
     console.warn("History load failed:", error);
