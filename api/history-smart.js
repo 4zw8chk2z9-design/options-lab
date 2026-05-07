@@ -1,4 +1,5 @@
 const EODHD_STOCK_MAP = {
+  // Deutschland / Xetra
   "SAP.DE": "SAP.XETRA",
   "SIE.DE": "SIE.XETRA",
   "ALV.DE": "ALV.XETRA",
@@ -12,6 +13,7 @@ const EODHD_STOCK_MAP = {
   "ADS.DE": "ADS.XETRA",
   "AIR.DE": "AIR.XETRA",
 
+  // Europa
   "ASML.AS": "ASML.AS",
   "LVMH.PA": "MC.PA",
   "NESN.SW": "NESN.SW",
@@ -20,8 +22,8 @@ const EODHD_STOCK_MAP = {
 };
 
 const INDEX_PROXY_MAP = {
-  "^FTSE": "EWU",
-  "^RUT": "IWM"
+  "^FTSE": "EWU.US",
+  "^RUT": "IWM.US"
 };
 
 const INDEX_MAP = {
@@ -35,14 +37,14 @@ const INDEX_MAP = {
 };
 
 const COMMODITY_MAP = {
-  "BZ=F": "BNO",
-  "CL=F": "USO",
-  "GC=F": "GLD",
-  "SI=F": "SLV",
-  "PL=F": "PPLT",
-  "PA=F": "PALL",
-  "HG=F": "CPER",
-  "NG=F": "UNG"
+  "BZ=F": "BNO.US",
+  "CL=F": "USO.US",
+  "GC=F": "GLD.US",
+  "SI=F": "SLV.US",
+  "PL=F": "PPLT.US",
+  "PA=F": "PALL.US",
+  "HG=F": "CPER.US",
+  "NG=F": "UNG.US"
 };
 
 const CRYPTO_MAP = {
@@ -54,6 +56,21 @@ function getDateString(daysAgo) {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
   return date.toISOString().slice(0, 10);
+}
+
+function toEodhdSymbol(symbol) {
+  if (INDEX_PROXY_MAP[symbol]) return INDEX_PROXY_MAP[symbol];
+  if (INDEX_MAP[symbol]) return INDEX_MAP[symbol];
+  if (EODHD_STOCK_MAP[symbol]) return EODHD_STOCK_MAP[symbol];
+  if (COMMODITY_MAP[symbol]) return COMMODITY_MAP[symbol];
+  if (CRYPTO_MAP[symbol]) return CRYPTO_MAP[symbol];
+
+  // US Aktien ohne Suffix → .US
+  if (/^[A-Z]{1,5}$/.test(symbol)) {
+    return `${symbol}.US`;
+  }
+
+  return symbol;
 }
 
 function calculateHistoricalVolatility(closes, days = 30) {
@@ -78,13 +95,10 @@ function calculateHistoricalVolatility(closes, days = 30) {
     returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) /
     (returns.length - 1);
 
-  const dailyVol = Math.sqrt(variance);
-  const annualizedVol = dailyVol * Math.sqrt(252) * 100;
-
-  return annualizedVol;
+  return Math.sqrt(variance) * Math.sqrt(252) * 100;
 }
 
-function normalizeHistory(rows, provider, requestedSymbol, sourceSymbol) {
+function normalizeHistory(rows, requestedSymbol, sourceSymbol, provider) {
   const cleaned = rows
     .map(row => ({
       date: row.date,
@@ -120,7 +134,10 @@ function normalizeHistory(rows, provider, requestedSymbol, sourceSymbol) {
 
   const vola30 = calculateHistoricalVolatility(closes, 30);
   const vola90 = calculateHistoricalVolatility(closes, 90);
-  const vola52 = calculateHistoricalVolatility(closes, Math.min(252, closes.length - 1));
+  const vola52 = calculateHistoricalVolatility(
+    closes,
+    Math.min(252, closes.length - 1)
+  );
 
   return {
     requestedSymbol,
@@ -139,127 +156,34 @@ function normalizeHistory(rows, provider, requestedSymbol, sourceSymbol) {
   };
 }
 
-async function fetchEodhdHistory(symbol, requestedSymbol, providerLabel) {
-  const from = getDateString(420);
-  const to = getDateString(0);
-
-  const url =
-    `https://eodhd.com/api/eod/${encodeURIComponent(symbol)}` +
-    `?api_token=${process.env.EODHD_API_KEY}&fmt=json&from=${from}&to=${to}`;
-
-  const response = await fetch(url);
-  const data = await response.json();
-
-  if (!Array.isArray(data)) {
-    return {
-      requestedSymbol,
-      sourceSymbol: symbol,
-      provider: providerLabel,
-      supported: false,
-      error: data.message || data.error || "No EODHD history available",
-      raw: data
-    };
-  }
-
-  return normalizeHistory(data, providerLabel, requestedSymbol, symbol);
-}
-
-async function fetchFinnhubHistory(symbol, requestedSymbol, providerLabel) {
-  const to = Math.floor(Date.now() / 1000);
-  const from = to - 420 * 24 * 60 * 60;
-
-  const url =
-    `https://finnhub.io/api/v1/stock/candle` +
-    `?symbol=${encodeURIComponent(symbol)}` +
-    `&resolution=D&from=${from}&to=${to}` +
-    `&token=${process.env.FINNHUB_API_KEY}`;
-
-  const response = await fetch(url);
-  const data = await response.json();
-
-  if (data.s !== "ok" || !Array.isArray(data.c)) {
-    return {
-      requestedSymbol,
-      sourceSymbol: symbol,
-      provider: providerLabel,
-      supported: false,
-      error: data.error || "No Finnhub history available",
-      raw: data
-    };
-  }
-
-  const rows = data.c.map((close, i) => ({
-    date: new Date(data.t[i] * 1000).toISOString().slice(0, 10),
-    open: data.o[i],
-    high: data.h[i],
-    low: data.l[i],
-    close,
-    volume: data.v ? data.v[i] : null
-  }));
-
-  return normalizeHistory(rows, providerLabel, requestedSymbol, symbol);
-}
-
 export default async function handler(req, res) {
   try {
     const requestedSymbol = req.query.symbol || "AAPL";
+    const sourceSymbol = toEodhdSymbol(requestedSymbol);
 
-    if (INDEX_PROXY_MAP[requestedSymbol]) {
-      return res.status(200).json(
-        await fetchFinnhubHistory(
-          INDEX_PROXY_MAP[requestedSymbol],
-          requestedSymbol,
-          "finnhub-index-proxy"
-        )
-      );
-    }
+    const from = getDateString(420);
+    const to = getDateString(0);
 
-    if (INDEX_MAP[requestedSymbol]) {
-      return res.status(200).json(
-        await fetchEodhdHistory(
-          INDEX_MAP[requestedSymbol],
-          requestedSymbol,
-          "eodhd-index"
-        )
-      );
-    }
+    const url =
+      `https://eodhd.com/api/eod/${encodeURIComponent(sourceSymbol)}` +
+      `?api_token=${process.env.EODHD_API_KEY}&fmt=json&from=${from}&to=${to}`;
 
-    if (EODHD_STOCK_MAP[requestedSymbol]) {
-      return res.status(200).json(
-        await fetchEodhdHistory(
-          EODHD_STOCK_MAP[requestedSymbol],
-          requestedSymbol,
-          "eodhd-stock"
-        )
-      );
-    }
+    const response = await fetch(url);
+    const data = await response.json();
 
-    if (CRYPTO_MAP[requestedSymbol]) {
-      return res.status(200).json(
-        await fetchEodhdHistory(
-          CRYPTO_MAP[requestedSymbol],
-          requestedSymbol,
-          "eodhd-crypto"
-        )
-      );
-    }
-
-    if (COMMODITY_MAP[requestedSymbol]) {
-      return res.status(200).json(
-        await fetchFinnhubHistory(
-          COMMODITY_MAP[requestedSymbol],
-          requestedSymbol,
-          "finnhub-commodity-proxy"
-        )
-      );
+    if (!Array.isArray(data)) {
+      return res.status(200).json({
+        requestedSymbol,
+        sourceSymbol,
+        provider: "eodhd-history",
+        supported: false,
+        error: data.message || data.error || "No EODHD history available",
+        raw: data
+      });
     }
 
     return res.status(200).json(
-      await fetchFinnhubHistory(
-        requestedSymbol,
-        requestedSymbol,
-        "finnhub"
-      )
+      normalizeHistory(data, requestedSymbol, sourceSymbol, "eodhd-history")
     );
   } catch (error) {
     return res.status(500).json({
