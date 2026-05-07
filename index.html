@@ -1311,12 +1311,10 @@ function rankStrategies() {
   const vol = +document.getElementById('vol').value;
   const time = +document.getElementById('time').value;
   const cap = +document.getElementById('capital').value || 500;
-  document.getElementById('move-v').textContent = move + '%';
-  document.getElementById('vol-v').textContent = ['Stark sinkend', 'Sinkend', 'Bleibt gleich', 'Steigend', 'Stark steigend'][vol+2];
-  document.getElementById('time-v').textContent = time;
 
-  const d = assetData[currentAsset.ticker] || { price: 100 };
-  const curr = d.price;
+  document.getElementById('move-v').textContent = move + '%';
+  document.getElementById('vol-v').textContent = ['Stark sinkend', 'Sinkend', 'Bleibt gleich', 'Steigend', 'Stark steigend'][vol + 2];
+  document.getElementById('time-v').textContent = time;
 
   const ranked = STRATEGIES.map(s => {
     const score = calcScore(s, marketView, move, vol, time);
@@ -1334,25 +1332,28 @@ function rankStrategies() {
         <div class="score-circle ${s.score >= 70 ? 'sc-high' : s.score >= 40 ? 'sc-mid' : 'sc-low'}">${s.score}</div>
       </div>
       <div class="strat-explain">${s.explain}</div>
-    </div>`).join('');
+    </div>
+  `).join('');
 }
 
 // ============ TRADE BUILDER ============
 function addLeg(side, type) {
-  const d = assetData[currentAsset.ticker] || { price: 100 };
-  const curr = d.price;
+  const curr = getCurrentUnderlyingPrice();
+
   const defStrike = type === 'call'
     ? (side === 'long' ? curr * 1.05 : curr * 1.10)
     : (side === 'long' ? curr * 0.95 : curr * 0.90);
 
   legs.push({
     id: ++legIdCounter,
-    side, type,
+    side,
+    type,
     strike: Math.round(defStrike * 100) / 100,
     premium: curr * 0.03,
     qty: 100,
     ratio: 0.1
   });
+
   renderLegs();
   calcBuilder();
 }
@@ -1375,6 +1376,7 @@ function renderLegs() {
   const html = legs.map(l => {
     const dirIcon = l.side === 'long' ? '+' : '−';
     const typeLabel = l.type.toUpperCase();
+
     return `<div class="leg-card ${l.side}">
       <div class="leg-head">
         <div class="leg-title">${dirIcon} ${l.side.toUpperCase()} ${typeLabel}</div>
@@ -1400,7 +1402,9 @@ function renderLegs() {
       </div>
     </div>`;
   }).join('');
-  document.getElementById('legs-container').innerHTML = html || '<div style="text-align:center; padding:20px; color:var(--muted2); font-size:13px">Noch keine Beine. Klicke unten um anzufangen.</div>';
+
+  document.getElementById('legs-container').innerHTML =
+    html || '<div style="text-align:center; padding:20px; color:var(--muted2); font-size:13px">Noch keine Beine. Klicke unten um anzufangen.</div>';
 }
 
 function getCurrentUnderlyingPrice() {
@@ -1418,7 +1422,7 @@ function getCurrentUnderlyingPrice() {
 
   return 100;
 }
-  
+
 function resetBuilder() {
   legs = [];
   renderLegs();
@@ -1438,18 +1442,20 @@ function resetBuilder() {
 function loadPreset(preset) {
   legs = [];
   legIdCounter = 0;
-const c = getCurrentUnderlyingPrice();
+
+  const c = getCurrentUnderlyingPrice();
 
   if (preset === 'bull-spread') {
-    legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
-    legs.push({ id: ++legIdCounter, side: 'short', type: 'call', strike: c*1.10, premium: c*0.015, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c * 0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'short', type: 'call', strike: c * 1.10, premium: c * 0.015, qty: 100, ratio: 0.1 });
   } else if (preset === 'bear-spread') {
-    legs.push({ id: ++legIdCounter, side: 'long', type: 'put', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
-    legs.push({ id: ++legIdCounter, side: 'short', type: 'put', strike: c*0.90, premium: c*0.015, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'put', strike: c, premium: c * 0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'short', type: 'put', strike: c * 0.90, premium: c * 0.015, qty: 100, ratio: 0.1 });
   } else if (preset === 'straddle') {
-    legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
-    legs.push({ id: ++legIdCounter, side: 'long', type: 'put', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c * 0.04, qty: 100, ratio: 0.1 });
+    legs.push({ id: ++legIdCounter, side: 'long', type: 'put', strike: c, premium: c * 0.04, qty: 100, ratio: 0.1 });
   }
+
   renderLegs();
   calcBuilder();
 }
@@ -1458,9 +1464,11 @@ function legPayoff(leg, underlying) {
   const intrinsic = leg.type === 'call'
     ? Math.max(0, underlying - leg.strike) * leg.ratio
     : Math.max(0, leg.strike - underlying) * leg.ratio;
+
   const payoff = leg.side === 'long'
     ? leg.qty * intrinsic - leg.qty * leg.premium
     : leg.qty * leg.premium - leg.qty * intrinsic;
+
   return payoff;
 }
 
@@ -1484,6 +1492,59 @@ function getBreakevenExplanation() {
       </div>
     `;
   }
+
+  const leg = legs[0];
+
+  if (leg.side !== 'long') {
+    return `
+      <div class="explain">
+        <div class="explain-title">📐 Break-even-Logik</div>
+        <p>
+          Bei Short-Positionen hängt der Break-even von der erhaltenen Prämie und dem Risikoprofil ab.
+          Der Builder berechnet den Break-even deshalb über die Payoff-Kurve.
+        </p>
+      </div>
+    `;
+  }
+
+  const strike = Number(leg.strike);
+  const premium = Number(leg.premium);
+  const ratio = Number(leg.ratio);
+
+  if (!strike || !premium || !ratio) {
+    return '';
+  }
+
+  let formula = '';
+  let breakeven = null;
+
+  if (leg.type === 'call') {
+    breakeven = strike + premium / ratio;
+    formula = `
+      <strong>Call Break-even:</strong><br>
+      Strike + Prämie / Verhältnis<br>
+      ${strike.toFixed(2)} + ${premium.toFixed(2)} / ${ratio.toFixed(2)} = <strong>${breakeven.toFixed(2)}</strong>
+    `;
+  } else {
+    breakeven = strike - premium / ratio;
+    formula = `
+      <strong>Put Break-even:</strong><br>
+      Strike - Prämie / Verhältnis<br>
+      ${strike.toFixed(2)} - ${premium.toFixed(2)} / ${ratio.toFixed(2)} = <strong>${breakeven.toFixed(2)}</strong>
+    `;
+  }
+
+  return `
+    <div class="explain">
+      <div class="explain-title">📐 Break-even-Formel</div>
+      <p>${formula}</p>
+      <p style="margin-top:8px">
+        Wichtig: Die Prämie wird durch das Bezugsverhältnis geteilt. Deshalb braucht ein Optionsschein mit Verhältnis
+        <strong>${ratio.toFixed(2)}</strong> eine deutlich größere Bewegung im Basiswert, als die reine Prämie zunächst vermuten lässt.
+      </p>
+    </div>
+  `;
+}
 
   const leg = legs[0];
 
