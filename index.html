@@ -2167,9 +2167,20 @@ const response = await fetch(`/api/quote-smart?symbol=${encodeURIComponent(ticke
 }
 
 const priceText = "$" + Number(data.price).toFixed(2);
-const changeText = data.changePercent !== null && data.changePercent !== undefined
-  ? Number(data.changePercent).toFixed(2) + "%"
+const changeValue = data.changePercent !== null && data.changePercent !== undefined
+  ? Number(data.changePercent)
+  : null;
+
+const changeText = changeValue !== null
+  ? changeValue.toFixed(2) + "%"
   : "";
+
+if (!assetData[ticker]) {
+  assetData[ticker] = {};
+}
+
+assetData[ticker].price = Number(data.price);
+assetData[ticker].change = changeValue;
 
 
 document.getElementById("sel-price").textContent = priceText;
@@ -2190,41 +2201,54 @@ if (Number(data.changePercent) > 0) {
   loadLiveQuoteForCurrentAsset();
     }
 
-  async function loadHistoryForCurrentAsset() {
-    try {
-      const ticker = currentAsset?.ticker || "AAPL";
+ async function loadHistoryForCurrentAsset() {
+  try {
+    const ticker = currentAsset?.ticker || "AAPL";
 
-      const response = await fetch(`/api/history-smart?symbol=${encodeURIComponent(ticker)}`);
-      const data = await response.json();
+    const response = await fetch(`/api/history-smart?symbol=${encodeURIComponent(ticker)}`);
+    const data = await response.json();
 
-      if (!data.supported || !data.closes || data.closes.length < 30) {
-        console.warn("Keine historischen Daten für", ticker, data);
-        return;
-      }
-
-      if (!assetData[ticker]) {
-        assetData[ticker] = {};
-      }
-
-      assetData[ticker] = {
-        ...assetData[ticker],
-        price: data.lastClose,
-        high52: data.high52,
-        low52: data.low52,
-        vola52: data.vola52,
-        vola30: data.vola30,
-        vola90: data.vola90,
-        closes: data.closes,
-        history: data.history,
-        historyProvider: data.provider
-      };
-
-      updateSelected();
-      renderTA();
-    } catch (error) {
-      console.warn("History load failed:", error);
+    if (!data.supported || !data.closes || data.closes.length < 30) {
+      console.warn("Keine historischen Daten für", ticker, data);
+      return;
     }
+
+    if (!assetData[ticker]) {
+      assetData[ticker] = {};
+    }
+
+    assetData[ticker] = {
+      ...assetData[ticker],
+      // Wichtig: price hier NICHT setzen, sonst überschreibt History den Live-Kurs
+      high52: data.high52,
+      low52: data.low52,
+      vola52: data.vola52,
+      vola30: data.vola30,
+      vola90: data.vola90,
+      closes: data.closes,
+      history: data.history,
+      historyProvider: data.provider
+    };
+
+    // Nur die Meta-Werte aktualisieren, nicht den großen Live-Kurs überschreiben
+    if (currentAsset?.ticker === ticker) {
+      document.getElementById("m-high").textContent = data.high52 ? Number(data.high52).toFixed(2) : "—";
+      document.getElementById("m-low").textContent = data.low52 ? Number(data.low52).toFixed(2) : "—";
+      document.getElementById("m-vola").textContent = data.vola52 ? Number(data.vola52).toFixed(0) + "%" : "—";
+
+      const last = data.lastClose || data.closes[data.closes.length - 1];
+      const range = data.high52 && data.low52 && data.high52 !== data.low52
+        ? ((last - data.low52) / (data.high52 - data.low52)) * 100
+        : null;
+
+      document.getElementById("m-range").textContent = range !== null ? range.toFixed(0) + "%" : "—";
+
+      renderTA();
+    }
+  } catch (error) {
+    console.warn("History load failed:", error);
   }
+}
 
   loadLiveQuoteForCurrentAsset();
   loadHistoryForCurrentAsset();
