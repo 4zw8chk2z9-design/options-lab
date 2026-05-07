@@ -1676,27 +1676,102 @@ function calcBuilder() {
 
 }
 
-  function renderBuilderScenarios(currentPrice) {
-  const scenarios = [-30, -20, -10, 0, 10, 20, 30];
+function renderBuilderScenarios(currentPrice) {
+  const prices = [];
 
-  document.getElementById('builder-scenarios').innerHTML = scenarios.map(pct => {
-    const price = currentPrice * (1 + pct / 100);
-    const result = totalPayoff(price);
-    const cls = result >= 0 ? 'pos' : 'neg';
+  // Standard-Szenarien um den aktuellen Kurs
+  [-30, -20, -10, 0, 10, 20, 30].forEach(pct => {
+    prices.push({
+      label: `${pct >= 0 ? '+' : ''}${pct}%`,
+      price: currentPrice * (1 + pct / 100),
+      sub: `${pct >= 0 ? '+' : ''}${pct}% vom aktuellen Kurs`
+    });
+  });
+
+  // Strike-Punkte ergänzen
+  legs.forEach(leg => {
+    const strike = Number(leg.strike);
+    if (strike && Number.isFinite(strike)) {
+      prices.push({
+        label: `Strike ${leg.type.toUpperCase()}`,
+        price: strike,
+        sub: `Ausübungspreis ${strike.toFixed(2)}`
+      });
+    }
+
+    // Einfacher Break-even für einzelne Long-Positionen
+    const premium = Number(leg.premium);
+    const ratio = Number(leg.ratio);
+
+    if (legs.length === 1 && leg.side === 'long' && strike && premium && ratio) {
+      const be = leg.type === 'call'
+        ? strike + premium / ratio
+        : strike - premium / ratio;
+
+      prices.push({
+        label: 'Break-even',
+        price: be,
+        sub: `ab hier beginnt Gewinn`
+      });
+
+      prices.push({
+        label: 'BE +10%',
+        price: be * 1.10,
+        sub: `10% über Break-even`
+      });
+    }
+  });
+
+  // Zielkurs ergänzen
+  const target = Number(document.getElementById('b-target').value);
+  if (target && Number.isFinite(target)) {
+    prices.push({
+      label: 'Zielkurs',
+      price: target,
+      sub: `dein gewähltes Szenario`
+    });
+  }
+
+  // Doppelte / sehr ähnliche Preise entfernen
+  const unique = [];
+  prices.forEach(item => {
+    if (!unique.some(u => Math.abs(u.price - item.price) / item.price < 0.002)) {
+      unique.push(item);
+    }
+  });
+
+  unique.sort((a, b) => a.price - b.price);
+
+  const results = unique.map(item => ({
+    ...item,
+    result: totalPayoff(item.price)
+  }));
+
+  const maxAbs = Math.max(...results.map(r => Math.abs(r.result)), 1);
+
+  document.getElementById('builder-scenarios').innerHTML = results.map(item => {
+    const result = item.result;
+    const width = Math.min(100, Math.max(8, Math.abs(result) / maxAbs * 100));
+    const isPositive = result >= 0;
 
     return `
-      <div class="scen-item" style="--w:${Math.min(100, Math.abs(pct) * 2)}%; --c:${result >= 0 ? 'rgba(0,230,118,0.08)' : 'rgba(255,61,61,0.08)'}">
+      <div class="scen-item" style="--w:${width}%; --c:${isPositive ? 'rgba(0,230,118,0.08)' : 'rgba(255,61,61,0.08)'}">
         <div class="scen-left">
-          <div class="scen-name">${pct >= 0 ? '+' : ''}${pct}%</div>
-          <div class="scen-sub">Underlying: ${price.toFixed(2)}</div>
+          <div class="scen-name">${item.label}</div>
+          <div class="scen-sub">Underlying: ${item.price.toFixed(2)} · ${item.sub}</div>
         </div>
         <div class="scen-right">
-          <div class="scen-val ${cls}" style="color:${result >= 0 ? 'var(--green)' : 'var(--red)'}">${result >= 0 ? '+' : ''}${result.toFixed(0)}€</div>
-          <div class="scen-pct">${currentPrice > 0 ? ((price / currentPrice - 1) * 100).toFixed(0) : 0}% vom aktuellen Kurs</div>
+          <div class="scen-val" style="color:${isPositive ? 'var(--green)' : 'var(--red)'}">
+            ${isPositive ? '+' : ''}${result.toFixed(0)}€
+          </div>
+          <div class="scen-pct">
+            ${currentPrice > 0 ? ((item.price / currentPrice - 1) * 100 >= 0 ? '+' : '') + ((item.price / currentPrice - 1) * 100).toFixed(1) : '0'}% vom aktuellen Kurs
+          </div>
         </div>
       </div>
     `;
   }).join('');
+}
 }
 
 function drawBuilderChart(target) {
