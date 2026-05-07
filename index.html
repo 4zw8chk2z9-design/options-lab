@@ -389,29 +389,195 @@ canvas { width: 100%; height: 140px; display: block; }
 
 <!-- TECHNICAL ANALYSIS TAB -->
 <div class="panel" id="panel-ta">
+
+  <!-- OVERALL SIGNAL -->
   <div id="ta-summary-wrap"></div>
 
-  <div class="card">
-    <div class="card-head">📊 Indikatoren</div>
-    <div class="ta-grid" id="ta-indicators"></div>
-  </div>
-
+  <!-- CHART -->
   <div class="card">
     <div class="card-head">📈 Kurschart (1 Jahr)</div>
     <div class="mini-chart-wrap" style="height:180px">
       <canvas id="ta-chart" style="height:160px"></canvas>
     </div>
-    <div style="font-size:11px; color:var(--muted2); text-align:center; margin-top:6px; font-family:var(--mono)">
-      MA50 (gelb) · MA200 (orange) · Aktueller Kurs (cyan)
+    <div style="display:flex; gap:14px; justify-content:center; margin-top:8px; flex-wrap:wrap">
+      <span style="font-family:var(--mono); font-size:10px; color:var(--cyan)">── Kurs</span>
+      <span style="font-family:var(--mono); font-size:10px; color:var(--yellow)">── MA50</span>
+      <span style="font-family:var(--mono); font-size:10px; color:var(--orange)">── MA200</span>
     </div>
   </div>
 
+  <!-- RSI -->
+  <div class="card" id="ta-rsi-card">
+    <div class="card-head">📊 RSI – Relative Strength Index</div>
+    <div id="ta-rsi-value-wrap" style="margin-bottom:14px"></div>
+
+    <div class="explain">
+      <div class="explain-title">💡 Was ist der RSI?</div>
+      <p>Der RSI misst, ob eine Aktie <strong>zu schnell gestiegen oder gefallen</strong> ist. Er zeigt auf einer Skala von 0–100, wie "erschöpft" die aktuelle Bewegung ist – ähnlich wie ein Puls bei Anstrengung.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:14px">
+      <div style="padding:12px; background:rgba(255,61,61,0.06); border:1px solid rgba(255,61,61,0.2); border-left:3px solid var(--red); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--red); margin-bottom:4px">🔴 RSI über 70 = ÜBERKAUFT</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Der Kurs ist sehr schnell gestiegen. Viele Trader nehmen jetzt Gewinne mit → <strong>Rücksetzer möglich</strong>. Nicht zwingend ein sofortiger Crash, aber das Risiko für eine Korrektur steigt. Für PUT-Optionsscheine interessant.</div>
+      </div>
+      <div style="padding:12px; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); border-left:3px solid var(--green); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:4px">🟢 RSI unter 30 = ÜBERVERKAUFT</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Der Kurs ist sehr schnell gefallen. Panikverkäufe oft übertrieben → <strong>Erholung möglich</strong>. Günstige Zone zum Einstieg in CALL-Optionsscheine, besonders wenn die Fundamentaldaten stimmen.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,204,0,0.06); border:1px solid rgba(255,204,0,0.2); border-left:3px solid var(--yellow); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--yellow); margin-bottom:4px">🟡 RSI 30–70 = NEUTRAL</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Kein extremes Signal. Der Markt läuft normal. Kein eindeutiges Kauf- oder Verkaufssignal aus dem RSI allein.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--s3); border-radius:8px; padding:12px; font-size:12px; color:var(--muted2); line-height:1.7">
+      <strong style="color:var(--cyan)">⚠️ Wichtig:</strong> RSI alleine reicht nicht. In starken Aufwärtstrends kann der RSI wochenlang über 70 bleiben. Immer mit anderen Signalen kombinieren.
+    </div>
+  </div>
+
+  <!-- MOVING AVERAGES -->
+  <div class="card" id="ta-ma-card">
+    <div class="card-head">📉 Gleitende Durchschnitte – MA50 & MA200</div>
+    <div id="ta-ma-value-wrap" style="margin-bottom:14px"></div>
+
+    <div class="explain">
+      <div class="explain-title">💡 Was sind gleitende Durchschnitte?</div>
+      <p>Ein gleitender Durchschnitt glättet den Kursverlauf. Der <strong>MA50</strong> zeigt den Schnitt der letzten 50 Tage, der <strong>MA200</strong> der letzten 200 Tage. Sie zeigen den <strong>echten Trend</strong> hinter dem täglichen Auf und Ab.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:14px">
+      <div style="padding:12px; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); border-left:3px solid var(--green); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:4px">🟢 Kurs ÜBER MA50</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Kurzfristig bullisher Trend. Die letzten 50 Tage war der Kurs im Schnitt niedriger → Momentum aufwärts.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,61,61,0.06); border:1px solid rgba(255,61,61,0.2); border-left:3px solid var(--red); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--red); margin-bottom:4px">🔴 Kurs UNTER MA50</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Kurzfristiger Abwärtstrend. Der aktuelle Kurs liegt unter dem 50-Tages-Schnitt → Schwäche im Kurzfristbereich.</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px">
+      <div style="padding:12px; background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.3); border-radius:8px; text-align:center">
+        <div style="font-size:18px; margin-bottom:4px">✨</div>
+        <div style="font-size:12px; font-weight:700; color:var(--green)">GOLDEN CROSS</div>
+        <div style="font-size:11px; color:var(--muted2); margin-top:4px; line-height:1.5">MA50 kreuzt MA200 <strong>nach oben</strong>. Starkes Kaufsignal. Profis warten oft genau auf diesen Moment.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,61,61,0.08); border:1px solid rgba(255,61,61,0.3); border-radius:8px; text-align:center">
+        <div style="font-size:18px; margin-bottom:4px">💀</div>
+        <div style="font-size:12px; font-weight:700; color:var(--red)">DEATH CROSS</div>
+        <div style="font-size:11px; color:var(--muted2); margin-top:4px; line-height:1.5">MA50 kreuzt MA200 <strong>nach unten</strong>. Warnsignal für längeren Abwärtstrend.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--s3); border-radius:8px; padding:12px; font-size:12px; color:var(--muted2); line-height:1.7">
+      <strong style="color:var(--cyan)">Praxistipp:</strong> MA200 ist der wichtigste Langfrist-Indikator. Viele institutionelle Anleger kaufen bei Berührung des MA200 → er wirkt oft als starker Support.
+    </div>
+  </div>
+
+  <!-- MACD -->
+  <div class="card" id="ta-macd-card">
+    <div class="card-head">📊 MACD – Moving Average Convergence Divergence</div>
+    <div id="ta-macd-value-wrap" style="margin-bottom:14px"></div>
+
+    <div class="explain">
+      <div class="explain-title">💡 Was ist der MACD?</div>
+      <p>Der MACD zeigt den <strong>Unterschied zwischen einem schnellen und einem langsamen Durchschnitt</strong>. Einfach gesagt: Er misst das <strong>Momentum des Momentums</strong> – beschleunigt der Trend oder bremst er ab?</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:14px">
+      <div style="padding:12px; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); border-left:3px solid var(--green); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:4px">🟢 MACD POSITIV (über 0)</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Kurzfristiger Trend stärker als langfristiger. <strong>Aufwärtsdynamik vorhanden.</strong> Eher bullishes Umfeld.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,61,61,0.06); border:1px solid rgba(255,61,61,0.2); border-left:3px solid var(--red); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--red); margin-bottom:4px">🔴 MACD NEGATIV (unter 0)</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Kurzfristiger Trend schwächelt. <strong>Abwärtsdynamik</strong> – eher bearishes Umfeld.</div>
+      </div>
+      <div style="padding:12px; background:rgba(177,95,255,0.06); border:1px solid rgba(177,95,255,0.2); border-left:3px solid var(--purple); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--purple); margin-bottom:4px">⭐ MACD KREUZUNG = Handelssignal</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">MACD-Linie kreuzt Signal-Linie <strong>von unten nach oben</strong> → Kaufsignal. Von oben nach unten → Verkaufssignal. Diese Kreuzungen sind für viele Trader die wichtigsten Momente.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 52W RANGE -->
+  <div class="card" id="ta-range-card">
+    <div class="card-head">📏 52-Wochen-Range – Wo steht der Kurs?</div>
+    <div id="ta-range-value-wrap" style="margin-bottom:14px"></div>
+
+    <div class="explain">
+      <div class="explain-title">💡 Was ist die 52-Wochen-Range?</div>
+      <p>Zeigt den <strong>niedrigsten und höchsten Kurs der letzten 52 Wochen</strong>. Der aktuelle Kurs als Prozentsatz zwischen diesen Extremen. So siehst du auf einen Blick ob der Kurs gerade historisch günstig oder teuer ist.</p>
+    </div>
+
+    <div id="ta-range-bar-wrap" style="margin-bottom:14px"></div>
+
+    <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:14px">
+      <div style="padding:12px; background:rgba(255,61,61,0.06); border:1px solid rgba(255,61,61,0.2); border-left:3px solid var(--red); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--red); margin-bottom:4px">🔴 Nahe 52W-HOCH (75–100%)</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Viele Anleger sitzen auf Gewinnen → erhöhte Verkaufsbereitschaft. Risk-Reward für Calls ungünstig. Besser auf Rücksetzer warten. Für PUTS interessant.</div>
+      </div>
+      <div style="padding:12px; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); border-left:3px solid var(--green); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:4px">🟢 Nahe 52W-TIEF (0–25%)</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Oft Überreaktion des Marktes. Günstige Einstiegszone für CALLS wenn Fundamentaldaten intakt. Hohes Rebound-Potenzial.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,204,0,0.06); border:1px solid rgba(255,204,0,0.2); border-left:3px solid var(--yellow); border-radius:0 8px 8px 0">
+        <div style="font-size:12px; font-weight:700; color:var(--yellow); margin-bottom:4px">🟡 Mitte (25–75%)</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6">Neutrales Terrain. Kein extremes Signal. Andere Indikatoren wichtiger zur Entscheidung.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOLATILITY -->
+  <div class="card" id="ta-vola-card">
+    <div class="card-head">🌊 Volatilität – Wie nervös ist der Markt?</div>
+    <div id="ta-vola-value-wrap" style="margin-bottom:14px"></div>
+
+    <div class="explain">
+      <div class="explain-title">💡 Was ist Volatilität?</div>
+      <p>Volatilität misst <strong>wie stark der Kurs schwankt</strong>. 40% Volatilität = der Kurs schwankt im Schnitt ±40% pro Jahr. Hohe Volatilität = Optionsscheine teuer. Niedrige Volatilität = Optionsscheine günstig.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; text-align:center">
+      <div style="padding:12px; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); border-radius:8px">
+        <div style="font-size:20px; margin-bottom:4px">😌</div>
+        <div style="font-size:11px; font-weight:700; color:var(--green)">NIEDRIG</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--muted2); margin-top:2px">unter 15%</div>
+        <div style="font-size:11px; color:var(--muted2); margin-top:6px; line-height:1.4">Optionen <strong>günstig</strong>. Guter Zeitpunkt für Calls/Puts.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,204,0,0.06); border:1px solid rgba(255,204,0,0.2); border-radius:8px">
+        <div style="font-size:20px; margin-bottom:4px">😐</div>
+        <div style="font-size:11px; font-weight:700; color:var(--yellow)">MITTEL</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--muted2); margin-top:2px">15–35%</div>
+        <div style="font-size:11px; color:var(--muted2); margin-top:6px; line-height:1.4">Normales Umfeld. Spreads erwägen.</div>
+      </div>
+      <div style="padding:12px; background:rgba(255,61,61,0.06); border:1px solid rgba(255,61,61,0.2); border-radius:8px">
+        <div style="font-size:20px; margin-bottom:4px">😱</div>
+        <div style="font-size:11px; font-weight:700; color:var(--red)">HOCH</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--muted2); margin-top:2px">über 35%</div>
+        <div style="font-size:11px; color:var(--muted2); margin-top:6px; line-height:1.4">Optionen <strong>teuer</strong>. Vol-Crush Risiko!</div>
+      </div>
+    </div>
+
+    <div style="background:var(--s3); border-radius:8px; padding:12px; font-size:12px; color:var(--muted2); line-height:1.7">
+      <strong style="color:var(--cyan)">⚠️ Vol Crush erklärt:</strong> Du kaufst teuer vor Quartalszahlen. Die Zahlen kommen – selbst wenn der Kurs steigt, kann dein Schein an Wert verlieren, weil die Nervosität (Vola) danach sofort fällt. Deshalb: <strong>Nie kurz vor Earnings blind einsteigen!</strong>
+    </div>
+  </div>
+
+  <!-- LIVE SIGNALS -->
   <div class="card">
-    <div class="card-head">💡 Interpretation</div>
+    <div class="card-head">🎯 Aktuelle Signale auf einen Blick</div>
+    <div class="ta-grid" id="ta-indicators"></div>
+  </div>
+
+  <!-- INTERPRETATION -->
+  <div class="card">
+    <div class="card-head">💡 Gesamtbild & Empfehlung</div>
     <div id="ta-interpretation"></div>
   </div>
-</div>
 
+</div>
 <!-- RISK TAB -->
 <div class="panel" id="panel-risk">
   <div class="card">
