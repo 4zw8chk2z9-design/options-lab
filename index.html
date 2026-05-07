@@ -1403,14 +1403,35 @@ function renderLegs() {
   document.getElementById('legs-container').innerHTML = html || '<div style="text-align:center; padding:20px; color:var(--muted2); font-size:13px">Noch keine Beine. Klicke unten um anzufangen.</div>';
 }
 
+function getCurrentUnderlyingPrice() {
+  const ticker = currentAsset?.ticker;
+  const live = quoteCache?.[ticker];
+  const d = assetData?.[ticker];
+
+  if (live?.price !== undefined && live?.price !== null) {
+    return Number(live.price);
+  }
+
+  if (d?.price !== undefined && d?.price !== null) {
+    return Number(d.price);
+  }
+
+  return 100;
+}
+  
 function resetBuilder() {
   legs = [];
   renderLegs();
-  const d = assetData[currentAsset.ticker] || { price: 100 };
+
+  const currentPrice = getCurrentUnderlyingPrice();
   const slider = document.getElementById('b-target');
-  slider.min = Math.round(d.price * 0.4);
-  slider.max = Math.round(d.price * 1.7);
-  slider.value = Math.round(d.price * 0.85);
+
+  slider.min = Math.round(currentPrice * 0.4);
+  slider.max = Math.round(currentPrice * 1.7);
+  slider.value = Math.round(currentPrice);
+
+  document.getElementById('b-target-v').textContent = currentPrice.toFixed(2);
+
   calcBuilder();
 }
 
