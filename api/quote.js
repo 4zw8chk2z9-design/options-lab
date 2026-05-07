@@ -1,11 +1,17 @@
 const SYMBOL_MAP = {
-  BMW: "BMW.DE",
-  SAP: "SAP.DE",
-  SIE: "SIE.DE",
-  ALV: "ALV.DE",
-  DTE: "DTE.DE",
-  MBG: "MBG.DE",
-  VOW3: "VOW3.DE"
+  AAPL: "AAPL",
+  MSFT: "MSFT",
+  NVDA: "NVDA",
+  TSLA: "TSLA",
+  GOOGL: "GOOGL",
+  META: "META",
+  AMZN: "AMZN",
+  NFLX: "NFLX",
+  AMD: "AMD",
+  INTC: "INTC",
+  CRM: "CRM",
+  ORCL: "ORCL",
+  ADBE: "ADBE"
 };
 
 export default async function handler(req, res) {
@@ -19,13 +25,33 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
+    if (data.error) {
+      return res.status(200).json({
+        requestedSymbol,
+        finnhubSymbol,
+        supported: false,
+        error: data.error
+      });
+    }
+
+    if (!data.c || data.c === 0) {
+      return res.status(200).json({
+        requestedSymbol,
+        finnhubSymbol,
+        supported: false,
+        error: "No live quote available"
+      });
+    }
+
     res.status(200).json({
       requestedSymbol,
       finnhubSymbol,
+      supported: true,
       ...data
     });
   } catch (error) {
     res.status(500).json({
+      supported: false,
       error: "Quote request failed"
     });
   }
