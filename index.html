@@ -350,9 +350,14 @@ canvas { width: 100%; height: 140px; display: block; }
 
 <nav>
   <div class="nav-logo">OPTIONS · LAB · ULTIMATE</div>
-  <div class="api-status">
-    <div class="api-dot" id="api-dot"></div>
-    <span id="api-text">PRÜFE...</span>
+
+  <div style="display:flex; align-items:center; gap:12px">
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="api-status">
+      <div class="api-dot" id="api-dot"></div>
+      <span id="api-text">PRÜFE...</span>
+    </div>
   </div>
 </nav>
 
