@@ -874,15 +874,15 @@ async function loadAll() {
   for (const a of ASSETS) {
     if (await fetchPrice(a)) ok++;
   }
-  if (ok > ASSETS.length / 2) {
-    document.getElementById('api-dot').classList.add('ok');
-    document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' LIVE';
-  } else if (ok > 0) {
-    document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' TEILS LIVE';
-  } else {
-    document.getElementById('api-dot').classList.add('fail');
-   document.getElementById('api-text').textContent = 'LIVE DATA';
-  }
+ if (ok > ASSETS.length / 2) {
+  document.getElementById('api-dot').classList.add('ok');
+  document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' LIVE · MULTI SOURCE';
+} else if (ok > 0) {
+  document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' TEILS LIVE · MULTI SOURCE';
+} else {
+  document.getElementById('api-dot').classList.add('fail');
+  document.getElementById('api-text').textContent = 'LIVE DATA · MULTI SOURCE';
+}
   renderAssets();
   selectAsset(currentAsset.ticker);
 }
