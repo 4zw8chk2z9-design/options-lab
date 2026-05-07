@@ -27,10 +27,8 @@ const INDEX_MAP = {
   "^DJI": "DJI.INDX",
   "^GDAXI": "GDAXI.INDX",
   "^STOXX50E": "STOXX50E.INDX",
-  "^FTSE": "FTSE.INDX",
   "^N225": "N225.INDX",
   "^VIX": "VIX.INDX",
-  "^RUT": "RUT.INDX"
 };
 
 const COMMODITY_MAP = {
@@ -43,6 +41,10 @@ const COMMODITY_MAP = {
   "PA=F": "PALL",  // Palladium Proxy
   "HG=F": "CPER",  // Copper Proxy
   "NG=F": "UNG"    // Natural Gas Proxy
+  const INDEX_PROXY_MAP = {
+  "^FTSE": "EWU",
+  "^RUT": "IWM"
+};
 };
 
 const CRYPTO_MAP = {
@@ -132,6 +134,18 @@ export default async function handler(req, res) {
   try {
     const requestedSymbol = req.query.symbol || "AAPL";
 
+// 0. Index-Proxies → Finnhub ETFs
+if (INDEX_PROXY_MAP[requestedSymbol]) {
+  const result = await fetchFinnhubQuote(INDEX_PROXY_MAP[requestedSymbol]);
+
+  return res.status(200).json({
+    requestedSymbol,
+    mappedSymbol: INDEX_PROXY_MAP[requestedSymbol],
+    assetType: "index-proxy",
+    ...result
+  });
+}
+    
     // 1. Indizes → EODHD
     if (INDEX_MAP[requestedSymbol]) {
       const result = await fetchEodhdQuote(
