@@ -2187,7 +2187,46 @@ if (Number(data.changePercent) > 0) {
   }
 
   loadLiveQuoteForCurrentAsset();
-  setInterval(loadLiveQuoteForCurrentAsset, 60000);
+    }
+
+  async function loadHistoryForCurrentAsset() {
+    try {
+      const ticker = currentAsset?.ticker || "AAPL";
+
+      const response = await fetch(`/api/history-smart?symbol=${encodeURIComponent(ticker)}`);
+      const data = await response.json();
+
+      if (!data.supported || !data.closes || data.closes.length < 30) {
+        console.warn("Keine historischen Daten für", ticker, data);
+        return;
+      }
+
+      if (!assetData[ticker]) {
+        assetData[ticker] = {};
+      }
+
+      assetData[ticker] = {
+        ...assetData[ticker],
+        price: data.lastClose,
+        high52: data.high52,
+        low52: data.low52,
+        vola52: data.vola52,
+        vola30: data.vola30,
+        vola90: data.vola90,
+        closes: data.closes,
+        history: data.history,
+        historyProvider: data.provider
+      };
+
+      updateSelected();
+      renderTA();
+    } catch (error) {
+      console.warn("History load failed:", error);
+    }
+  }
+
+  loadLiveQuoteForCurrentAsset();
+  loadHistoryForCurrentAsset();
 </script>
 </body>
 </html>
