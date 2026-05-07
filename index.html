@@ -1438,8 +1438,7 @@ function resetBuilder() {
 function loadPreset(preset) {
   legs = [];
   legIdCounter = 0;
-  const d = assetData[currentAsset.ticker] || { price: 100 };
-  const c = d.price;
+const c = getCurrentUnderlyingPrice();
 
   if (preset === 'bull-spread') {
     legs.push({ id: ++legIdCounter, side: 'long', type: 'call', strike: c, premium: c*0.04, qty: 100, ratio: 0.1 });
@@ -1490,9 +1489,10 @@ function calcBuilder() {
   const ret = cost > 0 ? (totalGain / cost) * 100 : 0;
 
   // Calc max gain/loss by sweeping price range
-  const d = assetData[currentAsset.ticker] || { price: 100 };
-  let maxG = -Infinity, maxL = Infinity;
-  for (let p = d.price * 0.1; p <= d.price * 3; p += d.price * 0.02) {
+  const currentPrice = getCurrentUnderlyingPrice();
+
+let maxG = -Infinity, maxL = Infinity;
+for (let p = currentPrice * 0.1; p <= currentPrice * 3; p += currentPrice * 0.02) {
     const pay = totalPayoff(p);
     if (pay > maxG) maxG = pay;
     if (pay < maxL) maxL = pay;
@@ -1500,8 +1500,8 @@ function calcBuilder() {
 
   // Find breakevens
   const breakevens = [];
-  let prevPay = totalPayoff(d.price * 0.1);
-  for (let p = d.price * 0.1; p <= d.price * 3; p += d.price * 0.005) {
+  let prevPay = totalPayoff(currentPrice * 0.1);
+for (let p = currentPrice * 0.1; p <= currentPrice * 3; p += currentPrice * 0.005)  {
     const pay = totalPayoff(p);
     if ((prevPay < 0 && pay >= 0) || (prevPay > 0 && pay <= 0)) {
       breakevens.push(p);
