@@ -1546,59 +1546,6 @@ function getBreakevenExplanation() {
   `;
 }
 
-  const leg = legs[0];
-
-  if (leg.side !== 'long') {
-    return `
-      <div class="explain">
-        <div class="explain-title">📐 Break-even-Logik</div>
-        <p>
-          Bei Short-Positionen hängt der Break-even von der erhaltenen Prämie und dem Risikoprofil ab.
-          Der Builder berechnet den Break-even deshalb über die Payoff-Kurve.
-        </p>
-      </div>
-    `;
-  }
-
-  const strike = Number(leg.strike);
-  const premium = Number(leg.premium);
-  const ratio = Number(leg.ratio);
-
-  if (!strike || !premium || !ratio) {
-    return '';
-  }
-
-  let formula = '';
-  let breakeven = null;
-
-  if (leg.type === 'call') {
-    breakeven = strike + premium / ratio;
-    formula = `
-      <strong>Call Break-even:</strong><br>
-      Strike + Prämie / Verhältnis<br>
-      ${strike.toFixed(2)} + ${premium.toFixed(2)} / ${ratio.toFixed(2)} = <strong>${breakeven.toFixed(2)}</strong>
-    `;
-  } else {
-    breakeven = strike - premium / ratio;
-    formula = `
-      <strong>Put Break-even:</strong><br>
-      Strike - Prämie / Verhältnis<br>
-      ${strike.toFixed(2)} - ${premium.toFixed(2)} / ${ratio.toFixed(2)} = <strong>${breakeven.toFixed(2)}</strong>
-    `;
-  }
-
-  return `
-    <div class="explain">
-      <div class="explain-title">📐 Break-even-Formel</div>
-      <p>${formula}</p>
-      <p style="margin-top:8px">
-        Wichtig: Die Prämie wird durch das Bezugsverhältnis geteilt. Deshalb braucht ein Optionsschein mit Verhältnis
-        <strong>${ratio.toFixed(2)}</strong> eine deutlich größere Bewegung im Basiswert, als die reine Prämie zunächst vermuten lässt.
-      </p>
-    </div>
-  `;
-}
-  
 function calcBuilder() {
   const target = +document.getElementById('b-target').value;
   document.getElementById('b-target-v').textContent = target.toFixed(2);
