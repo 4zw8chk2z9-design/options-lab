@@ -171,16 +171,18 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!Array.isArray(data)) {
-      return res.status(200).json({
-        requestedSymbol,
-        sourceSymbol,
-        provider: "eodhd-history",
-        supported: false,
-        error: data.message || data.error || "No EODHD history available",
-        raw: data
-      });
-    }
+    const rawText = await response.text();
+
+let data;
+try {
+  data = JSON.parse(rawText);
+} catch (parseError) {
+  return res.status(200).json({
+    supported: false,
+    error: "Provider returned non-JSON response",
+    details: rawText.slice(0, 160)
+  });
+}
 
     return res.status(200).json(
       normalizeHistory(data, requestedSymbol, sourceSymbol, "eodhd-history")
