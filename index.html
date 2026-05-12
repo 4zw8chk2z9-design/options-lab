@@ -2233,8 +2233,7 @@ function getBreakevenExplanation() {
 
 function calcBuilder() {
   const target = +document.getElementById('b-target').value;
-  document.getElementById('b-target-v').textContent = target.toFixed(2);
-
+document.getElementById('b-target-v').textContent = 'Zielkurs: ' + target.toFixed(2);
   if (legs.length === 0) {
     document.getElementById('builder-result').innerHTML =
       '<div style="text-align:center; padding:20px; color:var(--muted2)">Füge erst Beine hinzu</div>';
