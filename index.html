@@ -520,6 +520,15 @@ body.light-mode .target-mode-btn {
   <div class="card">
   <div class="card-head">🎯 Zielkurs simulieren</div>
 
+<div class="target-mode-grid" style="margin-bottom:14px">
+  <button class="target-mode-btn active" id="valuation-mode-market" onclick="setBuilderValuationMode('market')">
+    📈 Verkauf vor Fälligkeit
+  </button>
+  <button class="target-mode-btn" id="valuation-mode-expiry" onclick="setBuilderValuationMode('expiry')">
+    ⏳ Wert bei Fälligkeit
+  </button>
+</div>
+    
   <div class="explain" style="margin-bottom:14px">
     <div class="explain-title">Zielkurs-Szenario</div>
     <p>
