@@ -2097,13 +2097,29 @@ function resetBuilder() {
   renderLegs();
 
   const currentPrice = getCurrentUnderlyingPrice();
-  const slider = document.getElementById('b-target');
+  const targetInput = document.getElementById('b-target');
 
-  slider.min = Math.round(currentPrice * 0.4);
-  slider.max = Math.round(currentPrice * 1.7);
-  slider.value = Math.round(currentPrice);
+  if (targetInput) {
+    targetInput.value = currentPrice.toFixed(2);
+  }
 
-  document.getElementById('b-target-v').textContent = currentPrice.toFixed(2);
+  builderTargetMode = 'custom';
+
+  document.querySelectorAll('.target-mode-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  const customBtn = document.getElementById('target-mode-custom');
+  if (customBtn) customBtn.classList.add('active');
+
+  const label = document.getElementById('b-target-label');
+  if (label) label.textContent = 'Zielkurs absolut';
+
+  const note = document.getElementById('target-scenario-note');
+  if (note) {
+    note.style.display = 'none';
+    note.innerHTML = '';
+  }
 
   calcBuilder();
 }
