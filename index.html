@@ -3252,7 +3252,14 @@ function toggleTheme() {
   }
 }
 
+window.toggleTheme = toggleTheme;
+
 applySavedTheme();
+
+const themeBtn = document.getElementById('theme-toggle');
+if (themeBtn) {
+  themeBtn.addEventListener('click', toggleTheme);
+}
   
   loadLiveQuoteForCurrentAsset();
   loadHistoryForCurrentAsset();
