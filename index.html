@@ -282,12 +282,96 @@ canvas { width: 100%; height: 140px; display: block; }
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
-/* restlicher Light-Mode-CSS-Block hier */
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--cyan);
+}
 
-</style>
-</head>
+body.light-mode {
+  --bg: #f4f6fb;
+  --s1: #ffffff;
+  --s2: #ffffff;
+  --s3: #f0f3fa;
+  --s4: #e6eaf3;
+  --border: #d8deeb;
+  --border2: #c7cfdf;
 
-  
+  --text: #121726;
+  --muted: #7a8398;
+  --muted2: #5e687c;
+
+  --cyan: #0077ff;
+  --purple: #7b3ff2;
+  --green: #008f4f;
+  --red: #d62828;
+  --yellow: #b88600;
+  --orange: #e66a00;
+  --pink: #cc2c9b;
+}
+
+body.light-mode {
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(123,63,242,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 100% 60%, rgba(0,119,255,0.08) 0%, transparent 50%);
+}
+
+body.light-mode nav {
+  background: rgba(255,255,255,0.92);
+}
+
+body.light-mode .asset-picker,
+body.light-mode .selected-asset {
+  background: var(--s1);
+}
+
+body.light-mode .card,
+body.light-mode .asset-card,
+body.light-mode .strategy-card,
+body.light-mode .meta-item,
+body.light-mode .leg-card,
+body.light-mode .scen-item,
+body.light-mode .quiz-q,
+body.light-mode .risk-step {
+  box-shadow: 0 10px 28px rgba(20, 30, 60, 0.06);
+}
+
+body.light-mode .strat-explain,
+body.light-mode .stat-box,
+body.light-mode .result-box,
+body.light-mode .ta-card,
+body.light-mode .mini-chart-wrap,
+body.light-mode .gauge-wrap {
+  background: #f3f6fc;
+}
+
+body.light-mode .explain {
+  background: linear-gradient(135deg, rgba(0,119,255,0.07), rgba(0,119,255,0.02));
+}
+
+body.light-mode input,
+body.light-mode .num-input,
+body.light-mode .leg-input,
+body.light-mode .search-box input {
+  background: #ffffff;
+  color: var(--text);
+}
+
+body.light-mode .tab-bar {
+  background: var(--bg);
+}
+
+body.light-mode .tab-btn.active {
+  color: var(--text);
+}
+
+body.light-mode .strategy-card.open {
+  background: linear-gradient(135deg, rgba(0,119,255,0.06), rgba(123,63,242,0.04));
+}
+
+body.light-mode footer {
+  color: var(--muted2);
+}
+
 </style>
 </head>
 <body>
