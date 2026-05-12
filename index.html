@@ -1969,6 +1969,113 @@ function renderLegs() {
     html || '<div style="text-align:center; padding:20px; color:var(--muted2); font-size:13px">Noch keine Beine. Klicke unten um anzufangen.</div>';
 }
 
+let builderTargetMode = 'custom';
+
+function getBuilderScenarioTargets() {
+  const price = getCurrentUnderlyingPrice();
+  const ticker = currentAsset?.ticker;
+  const d = assetData?.[ticker] || {};
+
+  const vola = Number(d.vola52 || 25);
+  const high52 = Number(d.high52 || price * 1.25);
+  const low52 = Number(d.low52 || price * 0.75);
+
+  const timeMonths = Number(document.getElementById('time')?.value || 3);
+  const timeFactor = Math.sqrt(Math.max(timeMonths, 1) / 12);
+
+  const expectedMove = price * (vola / 100) * timeFactor;
+
+  const closes = d.closes || [];
+  const ma50 = closes.length >= 50
+    ? closes.slice(-50).reduce((a, b) => a + b, 0) / 50
+    : null;
+
+  const ma200 = closes.length >= 200
+    ? closes.slice(-200).reduce((a, b) => a + b, 0) / 200
+    : null;
+
+  let trendBoost = 1;
+
+  if (ma50 && ma200 && price > ma50 && ma50 > ma200) {
+    trendBoost = 1.15;
+  } else if (ma50 && price > ma50) {
+    trendBoost = 1.05;
+  }
+
+  const bullishTarget = Math.min(
+    Math.max(price + expectedMove * trendBoost, price * 1.03),
+    high52 * 1.08
+  );
+
+  const worstCaseTarget = Math.max(
+    Math.min(price - expectedMove, price * 0.97),
+    low52 * 0.92
+  );
+
+  return {
+    bullishTarget,
+    worstCaseTarget,
+    expectedMove,
+    vola,
+    timeMonths,
+    ma50,
+    ma200
+  };
+}
+
+function setBuilderTargetMode(mode) {
+  builderTargetMode = mode;
+
+  document.querySelectorAll('.target-mode-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  const activeBtn = document.getElementById('target-mode-' + mode);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const input = document.getElementById('b-target');
+  const label = document.getElementById('b-target-label');
+  const note = document.getElementById('target-scenario-note');
+
+  if (!input) return;
+
+  const targets = getBuilderScenarioTargets();
+
+  if (mode === 'bull') {
+    input.value = targets.bullishTarget.toFixed(2);
+    if (label) label.textContent = 'Bullisher Zielkurs aus technischer Analyse';
+    if (note) {
+      note.style.display = 'block';
+      note.innerHTML = `
+        <strong>Bullishes Szenario:</strong><br>
+        Zielkurs basiert auf historischer Volatilität, Zeithorizont und Trendfilter.
+        Hist. Vola: ${targets.vola.toFixed(0)}%.
+        Zeithorizont: ${targets.timeMonths} Monate.
+      `;
+    }
+  } else if (mode === 'worst') {
+    input.value = targets.worstCaseTarget.toFixed(2);
+    if (label) label.textContent = 'Worst-Case-Zielkurs aus technischer Analyse';
+    if (note) {
+      note.style.display = 'block';
+      note.innerHTML = `
+        <strong>Worst Case:</strong><br>
+        Szenario basiert auf historischer Volatilität und einem negativen Kursimpuls über deinen Zeithorizont.
+        Hist. Vola: ${targets.vola.toFixed(0)}%.
+        Zeithorizont: ${targets.timeMonths} Monate.
+      `;
+    }
+  } else {
+    if (label) label.textContent = 'Zielkurs absolut';
+    if (note) {
+      note.style.display = 'none';
+      note.innerHTML = '';
+    }
+  }
+
+  calcBuilder();
+}
+  
 function getCurrentUnderlyingPrice() {
   const ticker = currentAsset?.ticker;
   const live = quoteCache?.[ticker];
