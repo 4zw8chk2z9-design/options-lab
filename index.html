@@ -2159,7 +2159,22 @@ function loadPreset(preset) {
   calcBuilder();
 }
 
-function legPayoff(leg, underlying) {
+let builderValuationMode = 'market';
+
+function setBuilderValuationMode(mode) {
+  builderValuationMode = mode;
+
+  document.querySelectorAll('[id^="valuation-mode-"]').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  const activeBtn = document.getElementById('valuation-mode-' + mode);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  calcBuilder();
+}
+
+function legPayoffAtExpiry(leg, underlying) {
   const intrinsic = leg.type === 'call'
     ? Math.max(0, underlying - leg.strike) * leg.ratio
     : Math.max(0, leg.strike - underlying) * leg.ratio;
@@ -2169,6 +2184,37 @@ function legPayoff(leg, underlying) {
     : leg.qty * leg.premium - leg.qty * intrinsic;
 
   return payoff;
+}
+
+function legPayoffBeforeExpiry(leg, underlying) {
+  const currentPrice = getCurrentUnderlyingPrice();
+
+  const premium = Number(leg.premium) || 0;
+  const qty = Number(leg.qty) || 0;
+  const ratio = Number(leg.ratio) || 0;
+  const delta = Math.abs(Number(leg.delta) || 0);
+
+  const underlyingMove = underlying - currentPrice;
+
+  const optionMove = leg.type === 'call'
+    ? underlyingMove * delta * ratio
+    : -underlyingMove * delta * ratio;
+
+  const estimatedFuturePremium = Math.max(0, premium + optionMove);
+
+  const payoff = leg.side === 'long'
+    ? qty * (estimatedFuturePremium - premium)
+    : qty * (premium - estimatedFuturePremium);
+
+  return payoff;
+}
+
+function legPayoff(leg, underlying) {
+  if (builderValuationMode === 'expiry') {
+    return legPayoffAtExpiry(leg, underlying);
+  }
+
+  return legPayoffBeforeExpiry(leg, underlying);
 }
 
 function totalPayoff(underlying) {
