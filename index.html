@@ -2366,8 +2366,7 @@ document.getElementById('b-target-v').textContent = 'Zielkurs: ' + target.toFixe
       </div>
 
       <div class="result-box">
-        <div class="r-label">Ergebnis @ ${target.toFixed(2)}</div>
-        <div class="r-val ${payoffAtTarget >= 0 ? 'pos' : 'neg'}">${payoffAtTarget >= 0 ? '+' : ''}${payoffAtTarget.toFixed(0)}€</div>
+<div class="r-label">${builderValuationMode === 'market' ? 'Geschätzter Verkauf vor Fälligkeit' : 'Wert bei Fälligkeit'} @ ${target.toFixed(2)}</div>        <div class="r-val ${payoffAtTarget >= 0 ? 'pos' : 'neg'}">${payoffAtTarget >= 0 ? '+' : ''}${payoffAtTarget.toFixed(0)}€</div>
       </div>
 
       <div class="result-box">
@@ -2411,13 +2410,18 @@ document.getElementById('b-target-v').textContent = 'Zielkurs: ' + target.toFixe
 
     <div class="explain">
       <div class="explain-title">🧠 Interpretation</div>
-      <p>
-        Aktueller Basiswert: <strong>${currentPrice.toFixed(2)}</strong>.
-        Zielkurs: <strong>${target.toFixed(2)}</strong>.
-        ${requiredMove !== null
-          ? `Der nächste Break-even liegt bei <strong>${nearestBreakeven.toFixed(2)}</strong>, dafür braucht der Basiswert ungefähr <strong>${requiredMove >= 0 ? '+' : ''}${requiredMove.toFixed(1)}%</strong> Bewegung.`
-          : `In der simulierten Preisspanne wurde kein Break-even gefunden.`}
-      </p>
+<p>
+  Aktueller Basiswert: <strong>${currentPrice.toFixed(2)}</strong>.
+  Zielkurs: <strong>${target.toFixed(2)}</strong>.
+  ${requiredMove !== null
+    ? `Der nächste Break-even liegt bei <strong>${nearestBreakeven.toFixed(2)}</strong>, dafür braucht der Basiswert ungefähr <strong>${requiredMove >= 0 ? '+' : ''}${requiredMove.toFixed(1)}%</strong> Bewegung.`
+    : `In der simulierten Preisspanne wurde kein Break-even gefunden.`}
+</p>
+<p style="margin-top:8px">
+  ${builderValuationMode === 'market'
+    ? `Diese Berechnung schätzt den Verkaufspreis vor Fälligkeit über Delta, Kursbewegung und Bezugsverhältnis. Theta, implizite Volatilität, Spread und Währungseffekte sind noch nicht vollständig berücksichtigt.`
+    : `Diese Berechnung zeigt den konservativen Wert bei Fälligkeit. Dabei zählt nur der innere Wert des Optionsscheins abzüglich der gezahlten Prämie.`}
+</p>
     </div>
 
     ${getBreakevenExplanation()}
