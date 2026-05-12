@@ -1915,15 +1915,16 @@ function addLeg(side, type) {
     ? (side === 'long' ? curr * 1.05 : curr * 1.10)
     : (side === 'long' ? curr * 0.95 : curr * 0.90);
 
-  legs.push({
-    id: ++legIdCounter,
-    side,
-    type,
-    strike: Math.round(defStrike * 100) / 100,
-    premium: curr * 0.03,
-    qty: 100,
-    ratio: 0.1
-  });
+ legs.push({
+  id: ++legIdCounter,
+  side,
+  type,
+  strike: Math.round(defStrike * 100) / 100,
+  premium: curr * 0.03,
+  qty: 100,
+  ratio: 0.1,
+  delta: 0.5
+});
 
   renderLegs();
   calcBuilder();
