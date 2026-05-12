@@ -2358,7 +2358,16 @@ document.getElementById('b-target-v').textContent = 'Zielkurs: ' + target.toFixe
   const costLabel = cost >= 0 ? 'Nettoeinsatz' : 'Nettogutschrift';
   const costClass = cost >= 0 ? 'neg' : 'pos';
 
-  document.getElementById('builder-result').innerHTML = `
+  const payoffPlus1 = totalPayoff(currentPrice * 1.01);
+  const payoffPlus5 = totalPayoff(currentPrice * 1.05);
+  const payoffPlus10 = totalPayoff(currentPrice * 1.10);
+  const payoffMinus10 = totalPayoff(currentPrice * 0.90);
+
+  const estimatedPositionValue = cost >= 0
+    ? cost + payoffAtTarget
+    : payoffAtTarget;
+  
+    document.getElementById('builder-result').innerHTML = `
     <div class="result-grid">
       <div class="result-box">
         <div class="r-label">${costLabel}</div>
@@ -2366,7 +2375,14 @@ document.getElementById('b-target-v').textContent = 'Zielkurs: ' + target.toFixe
       </div>
 
       <div class="result-box">
-<div class="r-label">${builderValuationMode === 'market' ? 'Geschätzter Verkauf vor Fälligkeit' : 'Wert bei Fälligkeit'} @ ${target.toFixed(2)}</div>        <div class="r-val ${payoffAtTarget >= 0 ? 'pos' : 'neg'}">${payoffAtTarget >= 0 ? '+' : ''}${payoffAtTarget.toFixed(0)}€</div>
+        <div class="r-label">
+          ${builderValuationMode === 'market'
+            ? 'Geschätzter Gewinn/Verlust @ ' + target.toFixed(2)
+            : 'Wert bei Fälligkeit @ ' + target.toFixed(2)}
+        </div>
+        <div class="r-val ${payoffAtTarget >= 0 ? 'pos' : 'neg'}">
+          ${payoffAtTarget >= 0 ? '+' : ''}${payoffAtTarget.toFixed(0)}€
+        </div>
       </div>
 
       <div class="result-box">
@@ -2376,57 +2392,112 @@ document.getElementById('b-target-v').textContent = 'Zielkurs: ' + target.toFixe
         </div>
       </div>
 
-      <div class="result-box">
-        <div class="r-label">Benötigte Bewegung</div>
-        <div class="r-val warn-c">
-          ${requiredMove !== null ? (requiredMove >= 0 ? '+' : '') + requiredMove.toFixed(1) + '%' : '—'}
-        </div>
-      </div>
+      ${builderValuationMode === 'market'
+        ? `
+          <div class="result-box">
+            <div class="r-label">Geschätzter Positionswert</div>
+            <div class="r-val ${estimatedPositionValue >= cost ? 'pos' : 'neg'}">
+              ${estimatedPositionValue.toFixed(0)}€
+            </div>
+          </div>
 
-      <div class="result-box">
-        <div class="r-label">Max. Gewinn</div>
-        <div class="r-val pos">${maxGain > 999999 ? '∞' : '+' + maxGain.toFixed(0) + '€'}</div>
-      </div>
+          <div class="result-box">
+            <div class="r-label">Effekt bei +1% Basiswert</div>
+            <div class="r-val ${payoffPlus1 >= 0 ? 'pos' : 'neg'}">
+              ${payoffPlus1 >= 0 ? '+' : ''}${payoffPlus1.toFixed(0)}€
+            </div>
+          </div>
 
-      <div class="result-box">
-        <div class="r-label">Max. Verlust</div>
-        <div class="r-val neg">${maxLoss < -999999 ? '-∞' : maxLoss.toFixed(0) + '€'}</div>
-      </div>
+          <div class="result-box">
+            <div class="r-label">Effekt bei +5% Basiswert</div>
+            <div class="r-val ${payoffPlus5 >= 0 ? 'pos' : 'neg'}">
+              ${payoffPlus5 >= 0 ? '+' : ''}${payoffPlus5.toFixed(0)}€
+            </div>
+          </div>
 
-      <div class="result-box big">
-        <div class="r-label">Break-even</div>
-        <div class="r-val warn-c">
-          ${breakevens.length ? breakevens.map(b => b.toFixed(2)).join(' · ') : 'Kein Break-even in Range'}
-        </div>
-      </div>
+          <div class="result-box">
+            <div class="r-label">Effekt bei +10% Basiswert</div>
+            <div class="r-val ${payoffPlus10 >= 0 ? 'pos' : 'neg'}">
+              ${payoffPlus10 >= 0 ? '+' : ''}${payoffPlus10.toFixed(0)}€
+            </div>
+          </div>
 
-      <div class="result-box big">
-        <div class="r-label">Chance/Risiko</div>
-        <div class="r-val neu">
-          ${chanceRisk !== null && Number.isFinite(chanceRisk) ? chanceRisk.toFixed(2) + ' : 1' : 'nicht begrenzt / nicht sinnvoll'}
-        </div>
-      </div>
+          <div class="result-box">
+            <div class="r-label">Effekt bei -10% Basiswert</div>
+            <div class="r-val ${payoffMinus10 >= 0 ? 'pos' : 'neg'}">
+              ${payoffMinus10 >= 0 ? '+' : ''}${payoffMinus10.toFixed(0)}€
+            </div>
+          </div>
+        `
+        : `
+          <div class="result-box">
+            <div class="r-label">Benötigte Bewegung</div>
+            <div class="r-val warn-c">
+              ${requiredMove !== null ? (requiredMove >= 0 ? '+' : '') + requiredMove.toFixed(1) + '%' : '—'}
+            </div>
+          </div>
+
+          <div class="result-box">
+            <div class="r-label">Max. Gewinn</div>
+            <div class="r-val pos">${maxGain > 999999 ? '∞' : '+' + maxGain.toFixed(0) + '€'}</div>
+          </div>
+
+          <div class="result-box">
+            <div class="r-label">Max. Verlust</div>
+            <div class="r-val neg">${maxLoss < -999999 ? '-∞' : maxLoss.toFixed(0) + '€'}</div>
+          </div>
+
+          <div class="result-box big">
+            <div class="r-label">Break-even bei Fälligkeit</div>
+            <div class="r-val warn-c">
+              ${breakevens.length ? breakevens.map(b => b.toFixed(2)).join(' · ') : 'Kein Break-even in Range'}
+            </div>
+          </div>
+
+          <div class="result-box big">
+            <div class="r-label">Chance/Risiko</div>
+            <div class="r-val neu">
+              ${chanceRisk !== null && Number.isFinite(chanceRisk) ? chanceRisk.toFixed(2) + ' : 1' : 'nicht begrenzt / nicht sinnvoll'}
+            </div>
+          </div>
+        `
+      }
     </div>
 
     <div class="explain">
       <div class="explain-title">🧠 Interpretation</div>
-<p>
-  Aktueller Basiswert: <strong>${currentPrice.toFixed(2)}</strong>.
-  Zielkurs: <strong>${target.toFixed(2)}</strong>.
-  ${requiredMove !== null
-    ? `Der nächste Break-even liegt bei <strong>${nearestBreakeven.toFixed(2)}</strong>, dafür braucht der Basiswert ungefähr <strong>${requiredMove >= 0 ? '+' : ''}${requiredMove.toFixed(1)}%</strong> Bewegung.`
-    : `In der simulierten Preisspanne wurde kein Break-even gefunden.`}
-</p>
-<p style="margin-top:8px">
-  ${builderValuationMode === 'market'
-    ? `Diese Berechnung schätzt den Verkaufspreis vor Fälligkeit über Delta, Kursbewegung und Bezugsverhältnis. Theta, implizite Volatilität, Spread und Währungseffekte sind noch nicht vollständig berücksichtigt.`
-    : `Diese Berechnung zeigt den konservativen Wert bei Fälligkeit. Dabei zählt nur der innere Wert des Optionsscheins abzüglich der gezahlten Prämie.`}
-</p>
+
+      ${builderValuationMode === 'market'
+        ? `
+          <p>
+            Aktueller Basiswert: <strong>${currentPrice.toFixed(2)}</strong>.
+            Zielkurs: <strong>${target.toFixed(2)}</strong>.
+            Die Simulation zeigt, wie sich dein Optionsschein ungefähr entwickeln könnte, wenn du ihn <strong>vor der Fälligkeit</strong> wieder verkaufst.
+          </p>
+          <p style="margin-top:8px">
+            Die Berechnung nutzt Delta, Kursbewegung und Bezugsverhältnis. Dadurch sieht man besser, warum ein Optionsschein schon vor dem Break-even bei Fälligkeit deutlich steigen oder fallen kann.
+          </p>
+          <p style="margin-top:8px">
+            Wichtig: Theta, implizite Volatilität, Spread, Geld-Brief-Spanne und Währungseffekte sind noch nicht vollständig berücksichtigt. Das Ergebnis ist daher eine Näherung, keine exakte Preisberechnung.
+          </p>
+        `
+        : `
+          <p>
+            Aktueller Basiswert: <strong>${currentPrice.toFixed(2)}</strong>.
+            Zielkurs: <strong>${target.toFixed(2)}</strong>.
+            ${requiredMove !== null
+              ? `Der nächste Break-even liegt bei <strong>${nearestBreakeven.toFixed(2)}</strong>, dafür braucht der Basiswert ungefähr <strong>${requiredMove >= 0 ? '+' : ''}${requiredMove.toFixed(1)}%</strong> Bewegung.`
+              : `In der simulierten Preisspanne wurde kein Break-even gefunden.`}
+          </p>
+          <p style="margin-top:8px">
+            Diese Berechnung zeigt den konservativen Wert bei Fälligkeit. Dabei zählt nur der innere Wert des Optionsscheins abzüglich der gezahlten Prämie.
+          </p>
+        `
+      }
     </div>
 
-    ${getBreakevenExplanation()}
+    ${builderValuationMode === 'expiry' ? getBreakevenExplanation() : ''}
   `;
-
   renderBuilderScenarios(currentPrice);
   drawBuilderChart(target);
 
