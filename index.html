@@ -780,12 +780,25 @@ body.light-mode .target-mode-btn {
 
   <div class="card">
     <div class="card-head">🎓 Risiko-Profil Test</div>
+
+    <div class="explain">
+      <div class="explain-title">💡 Warum dieser Test?</div>
+      <p>
+        Der Risiko-Test hilft dir einzuschätzen, wie aggressiv du mit Optionsscheinen umgehen würdest.
+        Er ersetzt keine Anlageberatung, zeigt dir aber, ob dein Verhalten eher konservativ, ausgewogen oder spekulativ ist.
+      </p>
+      <p style="margin-top:8px">
+        Wichtig: Bei Optionsscheinen kann der gesamte Einsatz verloren gehen. Deshalb ist nicht nur entscheidend,
+        welchen Gewinn du erwartest, sondern wie viel Verlust du psychologisch und finanziell aushältst.
+      </p>
+    </div>
+    
     <div id="quiz-area">
-      <div class="quiz-q"><div class="quiz-question">1. Wie viel deines Kapitals würdest du für Optionsscheine einsetzen?</div><div class="quiz-options">
-        <div class="quiz-opt" onclick="answerQuiz(0,1)">Maximal 5% – Hauptkapital sicher</div>
-        <div class="quiz-opt" onclick="answerQuiz(0,2)">5-15% – Etwas Risiko ist okay</div>
-        <div class="quiz-opt" onclick="answerQuiz(0,3)">15-30% – Spürbare Gewinne erwünscht</div>
-        <div class="quiz-opt" onclick="answerQuiz(0,4)">30%+ – Ich gehe All-in</div>
+<div class="quiz-question">1. Wie viel deines Trading-Kapitals würdest du maximal in Optionsscheine investieren?</div>
+     <div class="quiz-opt" onclick="answerQuiz(0,1)">Maximal 5% – Optionsscheine nur als kleine Beimischung</div>
+<div class="quiz-opt" onclick="answerQuiz(0,2)">5–15% – kontrolliertes Risiko ist okay</div>
+<div class="quiz-opt" onclick="answerQuiz(0,3)">15–30% – ich will spürbare Renditechancen nutzen</div>
+<div class="quiz-opt" onclick="answerQuiz(0,4)">Über 30% – ich bin bereit, sehr hohe Schwankungen auszuhalten</div>
       </div></div>
       <div class="quiz-q"><div class="quiz-question">2. Was machst du nach 3 Verlust-Trades in Folge?</div><div class="quiz-options">
         <div class="quiz-opt" onclick="answerQuiz(1,1)">Pause machen, Strategie überdenken</div>
@@ -827,14 +840,6 @@ body.light-mode .target-mode-btn {
     <div id="dd-result"></div>
   </div>
 
-  <div class="card">
-    <div class="card-head">🇩🇪 Steuer-Rechner</div>
-    <div style="margin-bottom:14px"><label class="input-label">Brutto-Gewinn (€)</label><input type="number" class="num-input" id="tax-gain" value="1000" oninput="calcTax()"></div>
-    <div class="slider-row"><div class="slider-top"><span class="slider-name">Bereits genutzter Freibetrag</span><span class="slider-val" id="tax-free-v">0€</span></div><input type="range" id="tax-free" min="0" max="1000" value="0" oninput="calcTax()"></div>
-    <div style="margin-bottom:8px"><label class="input-label"><input type="checkbox" id="tax-church" onchange="calcTax()" style="margin-right:6px">Kirchensteuerpflichtig</label></div>
-    <div id="tax-result"></div>
-  </div>
-</div>
 
 <footer>
   OPTIONS LAB ULTIMATE · KEINE ANLAGEBERATUNG<br>
