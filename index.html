@@ -3370,9 +3370,21 @@ function calcRiskAssistant() {
 // ============ QUIZ / KELLY / DRAWDOWN / TAX ============
 function answerQuiz(q, a) {
   quizAnswers[q] = a;
-  const opts = document.querySelectorAll('.quiz-q')[q].querySelectorAll('.quiz-opt');
-  opts.forEach((o, i) => o.classList.toggle('selected', i === a-1));
-  if (quizAnswers.every(x => x > 0)) showProfile();
+
+  const questions = document.querySelectorAll('#quiz-area > .quiz-q');
+  const question = questions[q];
+
+  if (!question) return;
+
+  const opts = question.querySelectorAll('.quiz-opt');
+
+  opts.forEach((o, i) => {
+    o.classList.toggle('selected', i === a - 1);
+  });
+
+  if (quizAnswers.every(x => x > 0)) {
+    showProfile();
+  }
 }
 
 function showProfile() {
