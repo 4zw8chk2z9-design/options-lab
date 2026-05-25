@@ -3635,18 +3635,108 @@ function calcDrawdown() {
   const cap = +document.getElementById('dd-cap').value || 1000;
   const risk = +document.getElementById('dd-risk').value;
   const n = +document.getElementById('dd-n').value;
+
   document.getElementById('dd-risk-v').textContent = risk + '%';
   document.getElementById('dd-n-v').textContent = n;
-  let cur = cap, html = '';
+
+  let cur = cap;
+  let rows = '';
+
   for (let i = 1; i <= n; i++) {
-    cur *= (1 - risk/100);
-    const pct = ((cap - cur) / cap) * 100;
-    html += `<div class="drawdown-row">
-      <div class="dd-step">L${i}</div>
-      <div class="dd-bar"><div class="dd-fill" style="width:${Math.min(100, pct)}%"></div></div>
-      <div class="dd-val">${cur.toFixed(0)}€</div>
-    </div>`;
+    cur *= (1 - risk / 100);
+    const lossFromStart = ((cap - cur) / cap) * 100;
+
+    rows += `
+      <div class="drawdown-row">
+        <div class="dd-step">L${i}</div>
+        <div class="dd-bar">
+          <div class="dd-fill" style="width:${Math.min(100, lossFromStart)}%"></div>
+        </div>
+        <div class="dd-val">${cur.toFixed(0)}€</div>
+      </div>
+    `;
   }
+
+  const finalLoss = ((cap - cur) / cap) * 100;
+  const recovery = ((cap / cur) - 1) * 100;
+  const absoluteLoss = cap - cur;
+
+  let riskLevel = 'moderat';
+  let riskText = 'Diese Verlustserie wäre unangenehm, aber noch kontrollierbar.';
+  let riskClass = 'warn';
+
+  if (finalLoss < 15) {
+    riskLevel = 'kontrolliert';
+    riskText = 'Diese Verlustserie ist belastend, aber dein Kapital bleibt relativ stabil.';
+    riskClass = 'explain';
+  } else if (finalLoss >= 35) {
+    riskLevel = 'kritisch';
+    riskText = 'Diese Verlustserie würde dein Kapital stark beschädigen. Das Risiko pro Trade ist wahrscheinlich zu hoch.';
+    riskClass = 'danger';
+  }
+
+  document.getElementById('dd-result').innerHTML = `
+    <div class="risk-step">
+      <div class="risk-step-num">1</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Kapitalentwicklung nach Verlustserie</div>
+        <div class="risk-step-formula">
+          Startkapital × (1 - Verlust pro Trade)<sup>Anzahl Verlusttrades</sup>
+        </div>
+        <div style="margin-top:10px">
+          ${rows}
+        </div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Jeder Verlust wird vom bereits reduzierten Kapital abgezogen. Deshalb sinkt dein Kapital nicht linear,
+          sondern Schritt für Schritt auf einer immer kleineren Basis.
+        </div>
+      </div>
+    </div>
+
+    <div class="result-grid" style="margin-top:14px">
+      <div class="result-box">
+        <div class="r-label">Endkapital</div>
+        <div class="r-val ${cur >= cap ? 'pos' : 'neg'}">${cur.toFixed(0)}€</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Absoluter Verlust</div>
+        <div class="r-val neg">-${absoluteLoss.toFixed(0)}€</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Gesamtverlust</div>
+        <div class="r-val neg">-${finalLoss.toFixed(1)}%</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Gewinn nötig für Comeback</div>
+        <div class="r-val warn-c">+${recovery.toFixed(1)}%</div>
+      </div>
+    </div>
+
+    <div class="${riskClass}" style="margin-top:12px">
+      <strong>Einordnung: ${riskLevel.toUpperCase()}</strong><br>
+      ${riskText}
+      <br><br>
+      Wichtig: Ein Verlust von <strong>${finalLoss.toFixed(1)}%</strong> braucht danach einen Gewinn von
+      <strong>${recovery.toFixed(1)}%</strong>, um wieder auf das Startkapital zu kommen. Je tiefer der Drawdown,
+      desto schwerer wird das Comeback.
+    </div>
+
+    <div class="explain" style="margin-top:12px">
+      <div class="explain-title">🧠 Warum ist das wichtig?</div>
+      <p>
+        Viele Trader unterschätzen Verlustserien. Selbst eine gute Strategie kann mehrere Trades in Folge verlieren.
+        Deshalb entscheidet nicht nur die Trefferquote über deinen Erfolg, sondern vor allem, wie viel du pro Trade riskierst.
+      </p>
+      <p style="margin-top:8px">
+        Bei Optionsscheinen ist das besonders wichtig, weil einzelne Trades schnell 50% bis 100% verlieren können.
+        Kleine Positionsgrößen halten dich lange genug im Spiel, um gute Setups überhaupt nutzen zu können.
+      </p>
+    </div>
+  `;
+}
   const finalLoss = ((cap - cur) / cap) * 100;
   const recovery = ((cap / cur) - 1) * 100;
   html += `<div class="result-grid" style="margin-top:14px">
@@ -3655,31 +3745,6 @@ function calcDrawdown() {
     <div class="result-box big"><div class="r-label">Comeback nötig</div><div class="r-val warn-c">+${recovery.toFixed(0)}%</div></div>
   </div>`;
   document.getElementById('dd-result').innerHTML = html;
-}
-
-function calcTax() {
-  const gain = +document.getElementById('tax-gain').value || 0;
-  const free = +document.getElementById('tax-free').value;
-  const church = document.getElementById('tax-church').checked;
-  document.getElementById('tax-free-v').textContent = free + '€';
-  const FB = 1000;
-  const remFree = Math.max(0, FB - free);
-  const taxable = Math.max(0, gain - remFree);
-  const ke = taxable * 0.25;
-  const so = ke * 0.055;
-  const ki = church ? ke * 0.09 : 0;
-  const tot = ke + so + ki;
-  const net = gain - tot;
-  document.getElementById('tax-result').innerHTML = `
-    <div class="result-grid">
-      <div class="result-box"><div class="r-label">Steuerpflichtig</div><div class="r-val neu">${taxable.toFixed(0)}€</div></div>
-      <div class="result-box"><div class="r-label">Steuern</div><div class="r-val neg">-${tot.toFixed(0)}€</div></div>
-      <div class="result-box big"><div class="r-label">Netto</div><div class="r-val pos">${net.toFixed(0)}€</div></div>
-    </div>
-    <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:10px">
-      KapESt: ${ke.toFixed(0)}€ · Soli: ${so.toFixed(0)}€${church ? ' · KiSt: '+ki.toFixed(0)+'€' : ''}<br>
-      Pauschbetrag genutzt: ${(FB-remFree).toFixed(0)}€/${FB}€
-    </div>`;
 }
 
 // ============ LIBRARY ============
