@@ -3492,15 +3492,15 @@ function calcKelly() {
   const wr = +document.getElementById('kelly-wr').value / 100;
   const winPct = +document.getElementById('kelly-win').value / 100;
   const lossPct = +document.getElementById('kelly-loss').value / 100;
-  document.getElementById('kelly-wr-v').textContent = (wr*100).toFixed(0) + '%';
-  document.getElementById('kelly-win-v').textContent = (winPct*100).toFixed(0) + '%';
-  document.getElementById('kelly-loss-v').textContent = (lossPct*100).toFixed(0) + '%';
+
+  document.getElementById('kelly-wr-v').textContent = (wr * 100).toFixed(0) + '%';
+  document.getElementById('kelly-win-v').textContent = (winPct * 100).toFixed(0) + '%';
+  document.getElementById('kelly-loss-v').textContent = (lossPct * 100).toFixed(0) + '%';
+
   const b = winPct / lossPct;
   const fk = (wr * b - (1 - wr)) / b;
-  const hk = fk / 2, qk = fk / 4;
-  let warn = '';
-  if (fk <= 0) warn = '<div class="danger">⚠️ Negative Kelly: Statistisch unrentabel!</div>';
-  else if (fk > 0.5) warn = '<div class="warn">⚠️ Kelly > 50% – sehr aggressiv.</div>';
+
+  const kellyPct = fk * 100;
   const halfKelly = kellyPct / 2;
   const quarterKelly = kellyPct / 4;
 
@@ -3597,7 +3597,7 @@ function calcKelly() {
         : `Unter diesen Annahmen ergibt sich kein positiver Kelly-Wert. Das bedeutet: Die Kombination aus Trefferquote, Gewinnhöhe und Verlusthöhe wäre langfristig rechnerisch nicht attraktiv.`}
     </div>
   `;
-
+}
 function calcDrawdown() {
   const cap = +document.getElementById('dd-cap').value || 1000;
   const risk = +document.getElementById('dd-risk').value;
