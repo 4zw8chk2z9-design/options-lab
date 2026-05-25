@@ -855,6 +855,23 @@ body.light-mode .target-mode-btn {
     oder Quarter-Kelly.
   </p>
 </div>
+
+<div class="explain">
+  <div class="explain-title">🧠 Welche Werte musst du eintragen?</div>
+  <p>
+    <strong>Trading-Kapital:</strong> Das Kapital, das du aktiv für Trades einsetzen willst. Nicht dein gesamtes Vermögen.
+  </p>
+  <p style="margin-top:8px">
+    <strong>Win-Rate:</strong> Der Anteil deiner Trades, die im Gewinn enden. Beispiel: 45 von 100 Trades gewinnen bedeutet eine Win-Rate von 45%.
+  </p>
+  <p style="margin-top:8px">
+    <strong>Ø Gewinn pro Gewinner-Trade:</strong> Dein durchschnittlicher Gewinn bei erfolgreichen Trades. Wenn du im Gewinnfall deinen Einsatz verdoppelst, wären das 100% Gewinn.
+  </p>
+  <p style="margin-top:8px">
+    <strong>Ø Verlust pro Verlierer-Trade:</strong> Dein durchschnittlicher Verlust bei verlorenen Trades. Bei Optionsscheinen kann das im Extremfall 100% des Einsatzes sein.
+  </p>
+</div>
+    
     
     <div style="margin-bottom:14px"><label class="input-label">Trading-Kapital (€)</label><input type="number" class="num-input" id="kelly-cap" value="1000" oninput="calcKelly()"></div>
     <div class="slider-row"><div class="slider-top"><span class="slider-name">Win-Rate</span><span class="slider-val" id="kelly-wr-v">45%</span></div><input type="range" id="kelly-wr" min="20" max="80" value="45" oninput="calcKelly()"></div>
