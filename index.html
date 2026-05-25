@@ -3732,6 +3732,117 @@ function calcDrawdown() {
     `;
   }
 
+function renderRiskFit() {
+  syncAppStateFromInputs();
+
+  const r = appState.risk;
+  const s = appState.strategy;
+
+  const riskPct = [0, 1, 2, 5][r.riskProfile] || 2;
+  const maxLossEuro = r.tradingCapital * (riskPct / 100);
+  const positionByStop = maxLossEuro / (r.stopLoss / 100);
+
+  const wr = r.kellyWinRate / 100;
+  const win = r.avgWin / 100;
+  const loss = r.avgLoss / 100;
+
+  const b = loss > 0 ? win / loss : 0;
+  const fullKelly = b > 0 ? (wr * b - (1 - wr)) / b : 0;
+  const quarterKellyEuro = r.kellyCapital * Math.max(0, fullKelly / 4);
+
+  const finalPosition = quarterKellyEuro > 0
+    ? Math.min(positionByStop, quarterKellyEuro)
+    : positionByStop;
+
+  const ddAfterLosses = r.tradingCapital * Math.pow(1 - r.drawdownRisk / 100, r.drawdownLossTrades);
+  const ddLossPct = ((r.tradingCapital - ddAfterLosses) / r.tradingCapital) * 100;
+
+  let profileLabel = 'Moderat';
+  let profileClass = 'warn-c';
+
+  if (r.riskProfile === 1) {
+    profileLabel = 'Konservativ';
+    profileClass = 'pos';
+  } else if (r.riskProfile === 3) {
+    profileLabel = 'Aggressiv';
+    profileClass = 'neg';
+  }
+
+  let fitText = '';
+  let fitClass = 'warn';
+
+  if (ddLossPct < 15 && finalPosition <= positionByStop) {
+    fitText = 'Deine Risikowerte wirken kontrolliert. Die mögliche Positionsgröße bleibt innerhalb deiner Verlustgrenze.';
+    fitClass = 'explain';
+  } else if (ddLossPct >= 35) {
+    fitText = 'Deine Eingaben wirken sehr aggressiv. Eine Verlustserie würde dein Trading-Kapital stark belasten.';
+    fitClass = 'danger';
+  } else {
+    fitText = 'Deine Eingaben liegen im mittleren Bereich. Die Positionsgröße sollte konsequent über Stop-Loss oder Einsatzbegrenzung kontrolliert werden.';
+    fitClass = 'warn';
+  }
+
+  const possibleStrategyText =
+    s.marketView === 'bull'
+      ? 'Bei bullishen Szenarien könnten Long Call oder Bull Call Spread grundsätzlich zum Szenario passen. Für defensivere Risikoprofile ist ein Spread oft besser kontrollierbar.'
+      : s.marketView === 'bear'
+      ? 'Bei bearishen Szenarien könnten Long Put oder Bear Put Spread grundsätzlich zum Szenario passen. Für defensivere Risikoprofile ist ein Spread oft besser kontrollierbar.'
+      : 'Bei neutralen Szenarien könnten Strategien mit begrenztem Risiko oder Seitwärts-Setups betrachtet werden. Reine Long-Strategien brauchen meist eine stärkere Bewegung.';
+
+  document.getElementById('risk-fit-result').innerHTML = `
+    <div class="result-grid">
+      <div class="result-box">
+        <div class="r-label">Risikoprofil</div>
+        <div class="r-val ${profileClass}">${profileLabel}</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Max. Verlust pro Trade</div>
+        <div class="r-val neg">-${maxLossEuro.toFixed(0)}€</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Positionsgröße nach Stop-Loss</div>
+        <div class="r-val neu">${positionByStop.toFixed(0)}€</div>
+      </div>
+
+      <div class="result-box">
+        <div class="r-label">Quarter-Kelly Orientierung</div>
+        <div class="r-val ${quarterKellyEuro > 0 ? 'neu' : 'neg'}">
+          ${quarterKellyEuro > 0 ? quarterKellyEuro.toFixed(0) + '€' : '0€'}
+        </div>
+      </div>
+
+      <div class="result-box big">
+        <div class="r-label">Mögliche Positionsgröße</div>
+        <div class="r-val ${finalPosition <= maxLossEuro ? 'pos' : 'neu'}">${finalPosition.toFixed(0)}€</div>
+      </div>
+
+      <div class="result-box big">
+        <div class="r-label">Drawdown bei Verlustserie</div>
+        <div class="r-val ${ddLossPct < 15 ? 'pos' : ddLossPct < 35 ? 'warn-c' : 'neg'}">
+          -${ddLossPct.toFixed(1)}%
+        </div>
+      </div>
+    </div>
+
+    <div class="${fitClass}" style="margin-top:12px">
+      <strong>Risk-Fit Einordnung:</strong><br>
+      ${fitText}
+    </div>
+
+    <div class="explain" style="margin-top:12px">
+      <div class="explain-title">🎯 Mögliche Strategiearten zu deinem Szenario</div>
+      <p>
+        ${possibleStrategyText}
+      </p>
+      <p style="margin-top:8px">
+        Dies ist keine Anlageberatung und keine Kaufempfehlung. Die Auswertung zeigt nur, welche Strategiearten rechnerisch und vom Risiko her zu deinen Eingaben passen könnten.
+      </p>
+    </div>
+  `;
+}
+  
   const finalLoss = ((cap - cur) / cap) * 100;
   const recovery = ((cap / cur) - 1) * 100;
   const absoluteLoss = cap - cur;
