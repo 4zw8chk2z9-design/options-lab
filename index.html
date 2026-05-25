@@ -3332,45 +3332,93 @@ function calcRiskAssistant() {
     <div class="risk-step">
       <div class="risk-step-num">1</div>
       <div class="risk-step-content">
-        <div class="risk-step-title">Risiko pro Trade</div>
-        <div class="risk-step-formula">Kapital × Risiko% = ${total}€ × ${riskPct}%</div>
+        <div class="risk-step-title">Maximaler Verlust pro Trade</div>
+        <div class="risk-step-formula">
+          Trading-Kapital × Risiko-Profil = ${total}€ × ${riskPct}%
+        </div>
         <div class="risk-step-result">${riskEuro.toFixed(0)}€</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Das ist der Betrag, den du bei einem einzelnen Trade maximal verlieren solltest.
+          Es geht nicht um dein gesamtes Vermögen, sondern um dein geplantes Trading-Kapital.
+        </div>
       </div>
     </div>
+
     <div class="risk-step">
       <div class="risk-step-num">2</div>
       <div class="risk-step-content">
-        <div class="risk-step-title">Max. Positionsgröße</div>
-        <div class="risk-step-formula">Risiko / Stop-Loss% = ${riskEuro.toFixed(0)}€ / ${sl}%</div>
+        <div class="risk-step-title">Empfohlene Positionsgröße</div>
+        <div class="risk-step-formula">
+          Max. Verlust / Stop-Loss = ${riskEuro.toFixed(0)}€ / ${sl}%
+        </div>
         <div class="risk-step-result">${positionSize.toFixed(0)}€</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Wenn du bei <strong>-${sl}%</strong> aussteigen willst, dürfte dein Einsatz etwa
+          <strong>${positionSize.toFixed(0)}€</strong> betragen, damit dein Verlust ungefähr bei
+          <strong>${riskEuro.toFixed(0)}€</strong> bleibt.
+        </div>
       </div>
     </div>
+
     <div class="risk-step">
       <div class="risk-step-num">3</div>
       <div class="risk-step-content">
-        <div class="risk-step-title">Halbe Pleite (50% Verlust)</div>
-        <div class="risk-step-formula">Anzahl Verlust-Trades nacheinander</div>
+        <div class="risk-step-title">Belastung durch Verlustserie</div>
+        <div class="risk-step-formula">
+          Wie viele Verlusttrades in Folge halbieren dein Trading-Kapital?
+        </div>
         <div class="risk-step-result">~${Math.round(lossesToHalfCapital)} Trades</div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Je höher dein Risiko pro Trade, desto schneller kann eine Verlustserie dein Kapital stark reduzieren.
+          Genau deshalb ist Positionsgröße wichtiger als der einzelne Treffer.
+        </div>
       </div>
     </div>
+
     <div class="risk-step">
       <div class="risk-step-num">4</div>
       <div class="risk-step-content">
         <div class="risk-step-title">Erwartungswert pro Trade</div>
-        <div class="risk-step-formula">(WinRate × 2 - LossRate × 1) × Risiko @ 2:1 R/R</div>
-        <div class="risk-step-result" style="color:${expectedValue >= 0 ? 'var(--green)' : 'var(--red)'}">${expectedValue >= 0 ? '+' : ''}${expectedValue.toFixed(0)}€</div>
+        <div class="risk-step-formula">
+          Annahme: Gewinntrades bringen im Schnitt das Doppelte des Risikos, Verlusttrades verlieren ein Risiko.
+        </div>
+        <div class="risk-step-result" style="color:${expectedValue >= 0 ? 'var(--green)' : 'var(--red)'}">
+          ${expectedValue >= 0 ? '+' : ''}${expectedValue.toFixed(0)}€
+        </div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Die Win-Rate gibt an, wie oft deine Trades im Gewinn enden. Eine niedrige Win-Rate kann trotzdem funktionieren,
+          wenn deine Gewinne deutlich größer sind als deine Verluste.
+        </div>
       </div>
     </div>
+
     <div style="padding:14px; background:linear-gradient(135deg, var(--s2), var(--s3)); border:1px solid var(--cyan); border-radius:10px; margin-top:14px">
-      <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:8px">DEINE EMPFEHLUNG</div>
-      <div style="font-size:14px; line-height:1.7">
-        Bei <strong>${total}€</strong> Gesamtkapital solltest du:<br>
-        • Maximal <strong style="color:var(--cyan)">${positionSize.toFixed(0)}€</strong> in einen Trade investieren<br>
-        • Stop-Loss bei <strong>-${sl}%</strong> setzen<br>
-        • Risiko pro Trade: <strong>${riskEuro.toFixed(0)}€</strong> (${riskPct}% des Kapitals)<br>
-        ${expectedValue < 0 ? '<br><strong style="color:var(--red)">⚠️ Erwartungswert negativ!</strong> Mit dieser Win-Rate verlierst du langfristig Geld.' : '<br><strong style="color:var(--green)">✓ Erwartungswert positiv</strong> – Strategy mathematisch profitabel.'}
+      <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:8px">
+        DEINE RISIKO-ORIENTIERUNG
       </div>
-    </div>`;
+      <div style="font-size:14px; line-height:1.7">
+        Bei <strong>${total}€</strong> Trading-Kapital und Profil <strong>${['', 'konservativ', 'moderat', 'aggressiv'][prof]}</strong> ergibt sich:
+        <br><br>
+        Maximaler Verlust pro Trade:
+        <strong style="color:var(--cyan)">${riskEuro.toFixed(0)}€</strong>
+        <br>
+        Empfohlener Einsatz bei <strong>-${sl}%</strong> Stop-Loss:
+        <strong style="color:var(--cyan)">${positionSize.toFixed(0)}€</strong>
+        <br>
+        Risiko pro Trade:
+        <strong>${riskPct}%</strong> des Trading-Kapitals
+        <br>
+        ${expectedValue < 0
+          ? '<br><strong style="color:var(--red)">⚠️ Erwartungswert negativ:</strong> Mit dieser Win-Rate und diesem Chance-Risiko-Verhältnis würdest du langfristig eher Geld verlieren.'
+          : '<br><strong style="color:var(--green)">✓ Erwartungswert positiv:</strong> Unter diesen Annahmen wäre der Ansatz rechnerisch profitabel.'}
+      </div>
+    </div>
+
+    <div class="warn" style="margin-top:12px">
+      Bei Optionsscheinen kann der gesamte Einsatz verloren gehen. Wenn du keinen harten Stop-Loss nutzt,
+      solltest du konservativ mit Totalverlust rechnen.
+    </div>
+  `;
 }
 
 // ============ QUIZ / KELLY / DRAWDOWN / TAX ============
