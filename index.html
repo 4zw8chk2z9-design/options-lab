@@ -766,10 +766,16 @@ body.light-mode .target-mode-btn {
   <div class="card">
     <div class="card-head">🧮 Risk-pro-Trade Assistent</div>
     <div class="explain">
-      <div class="explain-title">💡 Schritt-für-Schritt</div>
-      <p>Berechnung aus Profi-Sicht: Wie viel solltest du in EINEN Trade investieren, um langfristig zu überleben?</p>
-    </div>
-
+  <div class="explain-title">💡 Was berechnet der Risk-pro-Trade Assistent?</div>
+  <p>
+    Dieser Rechner zeigt dir, wie groß dein Einsatz für einen einzelnen Optionsschein-Trade maximal sein sollte,
+    wenn du dein Risiko bewusst begrenzen willst.
+  </p>
+  <p style="margin-top:8px">
+    Wichtig: Risiko bedeutet nicht automatisch Einsatz. Wenn du 500 € einsetzt und bei -50 % aussteigst,
+    riskierst du rechnerisch 250 €. Wenn du keinen Stop-Loss nutzt, kann bei Optionsscheinen der gesamte Einsatz verloren gehen.
+  </p>
+</div>
     <div style="margin-bottom:14px"><label class="input-label">Gesamtkapital (€)</label><input type="number" class="num-input" id="ra-total" value="5000" oninput="calcRiskAssistant()"></div>
     <div class="slider-row"><div class="slider-top"><span class="slider-name">Risiko-Profil</span><span class="slider-val" id="ra-prof-v">Moderat</span></div><input type="range" id="ra-prof" min="1" max="3" value="2" oninput="calcRiskAssistant()"></div>
     <div style="margin-bottom:14px"><label class="input-label">Geplanter Stop-Loss vom Einstieg (%)</label><input type="number" class="num-input" id="ra-sl" value="50" oninput="calcRiskAssistant()"></div>
