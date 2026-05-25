@@ -882,8 +882,35 @@ body.light-mode .target-mode-btn {
 
   <div class="card">
     <div class="card-head">📉 Drawdown Simulator</div>
-    <div style="margin-bottom:14px"><label class="input-label">Startkapital (€)</label><input type="number" class="num-input" id="dd-cap" value="1000" oninput="calcDrawdown()"></div>
-    <div class="slider-row"><div class="slider-top"><span class="slider-name">Risk pro Trade</span><span class="slider-val" id="dd-risk-v">5%</span></div><input type="range" id="dd-risk" min="1" max="50" value="5" oninput="calcDrawdown()"></div>
+
+<div class="explain">
+  <div class="explain-title">💡 Was zeigt der Drawdown Simulator?</div>
+  <p>
+    Der Drawdown Simulator zeigt dir, wie stark dein Trading-Kapital sinkt, wenn mehrere Trades hintereinander verlieren.
+    Das ist wichtig, weil Verlustserien beim Trading normal sind, auch bei guten Strategien.
+  </p>
+  <p style="margin-top:8px">
+    Je höher dein Risiko pro Trade ist, desto schneller schrumpft dein Kapital. Danach brauchst du prozentual deutlich
+    höhere Gewinne, um wieder auf den Ausgangswert zu kommen.
+  </p>
+</div>
+
+<div class="explain">
+  <div class="explain-title">🧠 Welche Werte musst du eintragen?</div>
+  <p>
+    <strong>Startkapital:</strong> Dein Trading-Kapital zu Beginn der Simulation.
+  </p>
+  <p style="margin-top:8px">
+    <strong>Risk pro Trade:</strong> Der prozentuale Verlust deines Trading-Kapitals pro verlorenem Trade.
+    Beispiel: 5% bedeutet, dass jeder Verlusttrade dein Kapital um 5% reduziert.
+  </p>
+  <p style="margin-top:8px">
+    <strong>Verlust-Trades:</strong> Anzahl der Verlusttrades in Folge. Damit siehst du, wie stark dich eine schlechte Phase belasten würde.
+  </p>
+</div>
+    
+    <div style="margin-bottom:14px"><label class="input-label">Trading-Startkapital (€)</label><input type="number" class="num-input" id="dd-cap" value="1000" oninput="calcDrawdown()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Verlust pro Trade</span><span class="slider-val" id="dd-risk-v">5%</span></div><input type="range" id="dd-risk" min="1" max="50" value="5" oninput="calcDrawdown()"></div>
     <div class="slider-row"><div class="slider-top"><span class="slider-name">Verlust-Trades</span><span class="slider-val" id="dd-n-v">5</span></div><input type="range" id="dd-n" min="2" max="15" value="5" oninput="calcDrawdown()"></div>
     <div id="dd-result"></div>
   </div>
