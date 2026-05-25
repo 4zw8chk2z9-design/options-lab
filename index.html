@@ -793,26 +793,37 @@ body.light-mode .target-mode-btn {
       </p>
     </div>
     
-    <div id="quiz-area">
-<div class="quiz-question">1. Wie viel deines Trading-Kapitals würdest du maximal in Optionsscheine investieren?</div>
-     <div class="quiz-opt" onclick="answerQuiz(0,1)">Maximal 5% – Optionsscheine nur als kleine Beimischung</div>
-<div class="quiz-opt" onclick="answerQuiz(0,2)">5–15% – kontrolliertes Risiko ist okay</div>
-<div class="quiz-opt" onclick="answerQuiz(0,3)">15–30% – ich will spürbare Renditechancen nutzen</div>
-<div class="quiz-opt" onclick="answerQuiz(0,4)">Über 30% – ich bin bereit, sehr hohe Schwankungen auszuhalten</div>
-      </div></div>
-      <div class="quiz-q"><div class="quiz-question">2. Was machst du nach 3 Verlust-Trades in Folge?</div><div class="quiz-options">
-        <div class="quiz-opt" onclick="answerQuiz(1,1)">Pause machen, Strategie überdenken</div>
-        <div class="quiz-opt" onclick="answerQuiz(1,2)">Position verkleinern, weitermachen</div>
-        <div class="quiz-opt" onclick="answerQuiz(1,3)">Position vergrößern, "muss klappen"</div>
-        <div class="quiz-opt" onclick="answerQuiz(1,4)">All-in für den Comeback</div>
-      </div></div>
-      <div class="quiz-q"><div class="quiz-question">3. Erfahrung mit Hebelprodukten?</div><div class="quiz-options">
-        <div class="quiz-opt" onclick="answerQuiz(2,1)">Komplett neu</div>
-        <div class="quiz-opt" onclick="answerQuiz(2,2)">Einige Trades gemacht</div>
-        <div class="quiz-opt" onclick="answerQuiz(2,3)">Regelmäßig aktiv</div>
-        <div class="quiz-opt" onclick="answerQuiz(2,4)">Profi-Trader</div>
-      </div></div>
+<div id="quiz-area">
+  <div class="quiz-q">
+    <div class="quiz-question">1. Wie viel deines Trading-Kapitals würdest du maximal in Optionsscheine investieren?</div>
+    <div class="quiz-options">
+      <div class="quiz-opt" onclick="answerQuiz(0,1)">Maximal 5% – Optionsscheine nur als kleine Beimischung</div>
+      <div class="quiz-opt" onclick="answerQuiz(0,2)">5–15% – kontrolliertes Risiko ist okay</div>
+      <div class="quiz-opt" onclick="answerQuiz(0,3)">15–30% – ich will spürbare Renditechancen nutzen</div>
+      <div class="quiz-opt" onclick="answerQuiz(0,4)">Über 30% – ich bin bereit, sehr hohe Schwankungen auszuhalten</div>
     </div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="quiz-question">2. Was machst du nach 3 Verlust-Trades in Folge?</div>
+    <div class="quiz-options">
+      <div class="quiz-opt" onclick="answerQuiz(1,1)">Pause machen und Strategie überprüfen</div>
+      <div class="quiz-opt" onclick="answerQuiz(1,2)">Position verkleinern und kontrolliert weitermachen</div>
+      <div class="quiz-opt" onclick="answerQuiz(1,3)">Position vergrößern, weil der nächste Trade klappen muss</div>
+      <div class="quiz-opt" onclick="answerQuiz(1,4)">Aggressiv nachkaufen, um Verluste schnell zurückzuholen</div>
+    </div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="quiz-question">3. Wie viel Erfahrung hast du mit Hebelprodukten?</div>
+    <div class="quiz-options">
+      <div class="quiz-opt" onclick="answerQuiz(2,1)">Komplett neu, ich möchte die Grundlagen verstehen</div>
+      <div class="quiz-opt" onclick="answerQuiz(2,2)">Einige Trades gemacht, aber noch unsicher bei Risiko und Kennzahlen</div>
+      <div class="quiz-opt" onclick="answerQuiz(2,3)">Regelmäßig aktiv und mit Verlustphasen vertraut</div>
+      <div class="quiz-opt" onclick="answerQuiz(2,4)">Sehr erfahren, ich nutze Hebelprodukte bewusst als Trading-Instrument</div>
+    </div>
+  </div>
+</div>
     <div id="profile-result-wrap" style="display:none">
       <div class="profile-result" id="profile-result">
         <div class="profile-emoji" id="prof-emoji">🛡️</div>
