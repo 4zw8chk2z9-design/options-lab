@@ -1214,6 +1214,52 @@ let quizAnswers = [0, 0, 0];
 let legs = [];
 let legIdCounter = 0;
 
+  let appState = {
+  strategy: {
+    marketView: 'bull',
+    expectedMove: 15,
+    volatilityView: 0,
+    timeMonths: 3,
+    selectedStrategyId: null
+  },
+  risk: {
+    quizAnswers: [0, 0, 0],
+    tradingCapital: 5000,
+    riskProfile: 2,
+    stopLoss: 50,
+    winRate: 40,
+    kellyCapital: 1000,
+    kellyWinRate: 45,
+    avgWin: 200,
+    avgLoss: 100,
+    drawdownCapital: 1000,
+    drawdownRisk: 5,
+    drawdownLossTrades: 5
+  }
+};
+
+  function syncAppStateFromInputs() {
+  appState.strategy.marketView = marketView;
+  appState.strategy.expectedMove = +document.getElementById('move')?.value || 15;
+  appState.strategy.volatilityView = +document.getElementById('vol')?.value || 0;
+  appState.strategy.timeMonths = +document.getElementById('time')?.value || 3;
+
+  appState.risk.quizAnswers = [...quizAnswers];
+  appState.risk.tradingCapital = +document.getElementById('ra-total')?.value || 5000;
+  appState.risk.riskProfile = +document.getElementById('ra-prof')?.value || 2;
+  appState.risk.stopLoss = +document.getElementById('ra-sl')?.value || 50;
+  appState.risk.winRate = +document.getElementById('ra-wr')?.value || 40;
+
+  appState.risk.kellyCapital = +document.getElementById('kelly-cap')?.value || 1000;
+  appState.risk.kellyWinRate = +document.getElementById('kelly-wr')?.value || 45;
+  appState.risk.avgWin = +document.getElementById('kelly-win')?.value || 200;
+  appState.risk.avgLoss = +document.getElementById('kelly-loss')?.value || 100;
+
+  appState.risk.drawdownCapital = +document.getElementById('dd-cap')?.value || 1000;
+  appState.risk.drawdownRisk = +document.getElementById('dd-risk')?.value || 5;
+  appState.risk.drawdownLossTrades = +document.getElementById('dd-n')?.value || 5;
+}
+
 // ============ FETCH ============
 async function fetchPrice(asset) {
   try {
