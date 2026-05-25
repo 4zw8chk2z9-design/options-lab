@@ -1961,6 +1961,8 @@ function renderStrategyInfo(s) {
 }
 
 function rankStrategies() {
+
+    syncAppStateFromInputs();
   const move = +document.getElementById('move').value;
   const vol = +document.getElementById('vol').value;
   const time = +document.getElementById('time').value;
