@@ -3501,16 +3501,102 @@ function calcKelly() {
   let warn = '';
   if (fk <= 0) warn = '<div class="danger">⚠️ Negative Kelly: Statistisch unrentabel!</div>';
   else if (fk > 0.5) warn = '<div class="warn">⚠️ Kelly > 50% – sehr aggressiv.</div>';
-  document.getElementById('kelly-result').innerHTML = `${warn}
-    <div class="kelly-bar-wrap"><div class="kelly-bar" style="width:${Math.min(100, Math.max(15, fk*100*2))}%; background:var(--red)">FULL ${(Math.max(0, fk)*100).toFixed(0)}%</div></div>
-    <div class="kelly-bar-wrap"><div class="kelly-bar" style="width:${Math.min(100, Math.max(15, hk*100*2))}%; background:var(--yellow)">HALF ${(Math.max(0, hk)*100).toFixed(0)}%</div></div>
-    <div class="kelly-bar-wrap"><div class="kelly-bar" style="width:${Math.min(100, Math.max(15, qk*100*2))}%; background:var(--green)">QTR ${(Math.max(0, qk)*100).toFixed(0)}%</div></div>
-    <div class="result-grid" style="margin-top:14px">
-      <div class="result-box"><div class="r-label">Full</div><div class="r-val neg">${Math.max(0,fk*cap).toFixed(0)}€</div></div>
-      <div class="result-box"><div class="r-label">Half</div><div class="r-val warn-c">${Math.max(0,hk*cap).toFixed(0)}€</div></div>
-      <div class="result-box big"><div class="r-label">Quarter (empfohlen)</div><div class="r-val pos">${Math.max(0,qk*cap).toFixed(0)}€</div></div>
-    </div>`;
-}
+  const halfKelly = kellyPct / 2;
+  const quarterKelly = kellyPct / 4;
+
+  const fullKellyEuro = cap * (kellyPct / 100);
+  const halfKellyEuro = cap * (halfKelly / 100);
+  const quarterKellyEuro = cap * (quarterKelly / 100);
+
+  const cappedKellyPct = Math.max(0, Math.min(100, kellyPct));
+  const cappedHalfPct = Math.max(0, Math.min(100, halfKelly));
+  const cappedQuarterPct = Math.max(0, Math.min(100, quarterKelly));
+
+  document.getElementById('kelly-result').innerHTML = `
+    <div class="risk-step">
+      <div class="risk-step-num">1</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Full Kelly</div>
+        <div class="risk-step-formula">
+          Theoretisch optimaler Kapitaleinsatz nach Kelly-Formel
+        </div>
+        <div class="risk-step-result" style="color:${kellyPct > 0 ? 'var(--green)' : 'var(--red)'}">
+          ${kellyPct > 0 ? kellyPct.toFixed(1) + '% · ' + fullKellyEuro.toFixed(0) + '€' : 'Kein positiver Kelly-Wert'}
+        </div>
+        <div class="kelly-bar-wrap">
+          <div class="kelly-bar" style="width:${cappedKellyPct}%; background:${kellyPct > 0 ? 'var(--green)' : 'var(--red)'}">
+            ${kellyPct > 0 ? kellyPct.toFixed(1) + '%' : '0%'}
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Full Kelly ist die aggressive, mathematische Obergrenze. Sie setzt voraus, dass deine Trefferquote und dein
+          Gewinn-Verlust-Verhältnis realistisch geschätzt sind. In der Praxis ist Full Kelly oft zu riskant.
+        </div>
+      </div>
+    </div>
+
+    <div class="risk-step">
+      <div class="risk-step-num">2</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Half Kelly</div>
+        <div class="risk-step-formula">
+          50% des Kelly-Werts, konservativer als Full Kelly
+        </div>
+        <div class="risk-step-result">
+          ${halfKelly > 0 ? halfKelly.toFixed(1) + '% · ' + halfKellyEuro.toFixed(0) + '€' : '0€'}
+        </div>
+        <div class="kelly-bar-wrap">
+          <div class="kelly-bar" style="width:${cappedHalfPct}%; background:var(--cyan)">
+            ${halfKelly > 0 ? halfKelly.toFixed(1) + '%' : '0%'}
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Half Kelly reduziert Schwankungen deutlich. Für aktives Trading ist das oft realistischer als Full Kelly.
+        </div>
+      </div>
+    </div>
+
+    <div class="risk-step">
+      <div class="risk-step-num">3</div>
+      <div class="risk-step-content">
+        <div class="risk-step-title">Quarter Kelly</div>
+        <div class="risk-step-formula">
+          25% des Kelly-Werts, defensivere Orientierung
+        </div>
+        <div class="risk-step-result">
+          ${quarterKelly > 0 ? quarterKelly.toFixed(1) + '% · ' + quarterKellyEuro.toFixed(0) + '€' : '0€'}
+        </div>
+        <div class="kelly-bar-wrap">
+          <div class="kelly-bar" style="width:${cappedQuarterPct}%; background:var(--purple)">
+            ${quarterKelly > 0 ? quarterKelly.toFixed(1) + '%' : '0%'}
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--muted2); line-height:1.6; margin-top:8px">
+          Quarter Kelly ist für Anfänger und volatile Produkte wie Optionsscheine meist die sinnvollere Orientierung.
+          Es schützt besser vor Fehlannahmen und Verlustserien.
+        </div>
+      </div>
+    </div>
+
+    <div class="explain" style="margin-top:12px">
+      <div class="explain-title">🧠 Variablen erklärt</div>
+      <p>
+        <strong>Win-Rate:</strong> Anteil deiner Trades, die im Gewinn enden. 45% bedeutet: 45 von 100 Trades sind Gewinner.
+      </p>
+      <p style="margin-top:8px">
+        <strong>Ø Gewinn:</strong> Durchschnittlicher Gewinn eines Gewinner-Trades bezogen auf den Einsatz oder das Risiko.
+      </p>
+      <p style="margin-top:8px">
+        <strong>Ø Verlust:</strong> Durchschnittlicher Verlust eines Verlierer-Trades. Bei Optionsscheinen kann das im Extremfall 100% des Einsatzes sein.
+      </p>
+    </div>
+
+    <div class="${kellyPct > 0 ? 'warn' : 'danger'}" style="margin-top:12px">
+      ${kellyPct > 0
+        ? `Kelly ist eine theoretische Orientierung, kein direkter Kaufvorschlag. Wenn du deine Trefferquote überschätzt, wird der vorgeschlagene Einsatz schnell zu hoch.`
+        : `Unter diesen Annahmen ergibt sich kein positiver Kelly-Wert. Das bedeutet: Die Kombination aus Trefferquote, Gewinnhöhe und Verlusthöhe wäre langfristig rechnerisch nicht attraktiv.`}
+    </div>
+  `;
 
 function calcDrawdown() {
   const cap = +document.getElementById('dd-cap').value || 1000;
