@@ -3414,6 +3414,7 @@ function drawTAChart(closes, ma50val, ma200val) {
 
 // ============ RISK ASSISTANT ============
 function calcRiskAssistant() {
+    syncAppStateFromInputs();
   const total = +document.getElementById('ra-total').value || 5000;
   const prof = +document.getElementById('ra-prof').value;
   const sl = +document.getElementById('ra-sl').value || 50;
@@ -3583,6 +3584,7 @@ function resetQuiz() {
 }
 
 function calcKelly() {
+    syncAppStateFromInputs();
   const cap = +document.getElementById('kelly-cap').value || 1000;
   const wr = +document.getElementById('kelly-wr').value / 100;
   const winPct = +document.getElementById('kelly-win').value / 100;
