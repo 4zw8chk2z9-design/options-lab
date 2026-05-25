@@ -842,10 +842,24 @@ body.light-mode .target-mode-btn {
 
   <div class="card">
     <div class="card-head">📐 Kelly-Formel</div>
+
+<div class="explain">
+  <div class="explain-title">💡 Was ist die Kelly-Formel?</div>
+  <p>
+    Die Kelly-Formel berechnet theoretisch, wie viel Prozent deines Kapitals du einsetzen könntest,
+    wenn du deine Trefferquote und dein durchschnittliches Gewinn-Verlust-Verhältnis kennst.
+  </p>
+  <p style="margin-top:8px">
+    Wichtig: Kelly ist kein Anfänger-Einsatzvorschlag. Die Formel reagiert extrem sensibel auf falsche Annahmen.
+    Wer seine Win-Rate überschätzt, riskiert schnell zu große Positionen. In der Praxis nutzt man deshalb oft Half-Kelly
+    oder Quarter-Kelly.
+  </p>
+</div>
+    
     <div style="margin-bottom:14px"><label class="input-label">Trading-Kapital (€)</label><input type="number" class="num-input" id="kelly-cap" value="1000" oninput="calcKelly()"></div>
     <div class="slider-row"><div class="slider-top"><span class="slider-name">Win-Rate</span><span class="slider-val" id="kelly-wr-v">45%</span></div><input type="range" id="kelly-wr" min="20" max="80" value="45" oninput="calcKelly()"></div>
-    <div class="slider-row"><div class="slider-top"><span class="slider-name">Avg. Gewinn (%)</span><span class="slider-val" id="kelly-win-v">200%</span></div><input type="range" id="kelly-win" min="20" max="500" value="200" oninput="calcKelly()"></div>
-    <div class="slider-row"><div class="slider-top"><span class="slider-name">Avg. Verlust (%)</span><span class="slider-val" id="kelly-loss-v">100%</span></div><input type="range" id="kelly-loss" min="20" max="100" value="100" oninput="calcKelly()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Ø Gewinn pro Gewinner-Trade (%)</span><span class="slider-val" id="kelly-win-v">200%</span></div><input type="range" id="kelly-win" min="20" max="500" value="200" oninput="calcKelly()"></div>
+    <div class="slider-row"><div class="slider-top"><span class="slider-name">Ø Verlust pro Verlierer-Trade (%)</span><span class="slider-val" id="kelly-loss-v">100%</span></div><input type="range" id="kelly-loss" min="20" max="100" value="100" oninput="calcKelly()"></div>
     <div id="kelly-result"></div>
   </div>
 
