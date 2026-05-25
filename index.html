@@ -3551,6 +3551,10 @@ function calcRiskAssistant() {
       solltest du konservativ mit Totalverlust rechnen.
     </div>
   `;
+
+  if (document.getElementById('risk-fit-result')) {
+    renderRiskFit();
+  }
 }
 
 // ============ QUIZ / KELLY / DRAWDOWN / TAX ============
@@ -3705,6 +3709,9 @@ function calcKelly() {
         : `Unter diesen Annahmen ergibt sich kein positiver Kelly-Wert. Das bedeutet: Die Kombination aus Trefferquote, Gewinnhöhe und Verlusthöhe wäre langfristig rechnerisch nicht attraktiv.`}
     </div>
   `;
+    if (document.getElementById('risk-fit-result')) {
+    renderRiskFit();
+  }
 }
 function calcDrawdown() {
   const cap = +document.getElementById('dd-cap').value || 1000;
@@ -3730,6 +3737,9 @@ function calcDrawdown() {
         <div class="dd-val">${cur.toFixed(0)}€</div>
       </div>
     `;
+      if (document.getElementById('risk-fit-result')) {
+    renderRiskFit();
+  }
   }
 
 function renderRiskFit() {
