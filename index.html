@@ -3649,6 +3649,7 @@ function resetQuiz() {
 }
 
 function calcKelly() {
+    riskLabTouched = true;
   syncAppStateFromInputs();
 
   const cap = +document.getElementById('kelly-cap').value || 1000;
@@ -3756,6 +3757,7 @@ function calcKelly() {
   }
 }
 function calcDrawdown() {
+    riskLabTouched = true;
   syncAppStateFromInputs();
 
   const cap = +document.getElementById('dd-cap').value || 1000;
