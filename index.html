@@ -2041,6 +2041,23 @@ function rankStrategies() {
       </div>
     `;
 
+  const riskSnapshot = getRiskFitSnapshot();
+
+  const riskHint = `
+    <div class="explain" style="margin-bottom:12px">
+      <div class="explain-title">🧮 Risk-Kontext aus deinem Risk Lab</div>
+      <p>
+        Risk-Fit: <strong class="${riskSnapshot.riskFitClass}">${riskSnapshot.riskFitLabel}</strong>.
+        Trading-Kapital: <strong>${riskSnapshot.tradingCapital.toFixed(0)}€</strong>.
+        Mögliche Positionsgröße nach deinen Risikoeingaben: <strong>${riskSnapshot.finalPosition.toFixed(0)}€</strong>.
+      </p>
+      <p style="margin-top:8px">
+        Die folgende Liste zeigt einen Strategie-Fit nach Szenario, technischer Analyse und Markteinschätzung.
+        Sie ist keine Anlageberatung und keine Kaufempfehlung.
+      </p>
+    </div>
+  `;
+  
   const ranked = STRATEGIES.map(s => {
     const result = calcScore(s, marketView, move, vol, time);
     return {
