@@ -3596,6 +3596,7 @@ syncTradingCapitalInputs(total, 'ra-total');
 
 // ============ QUIZ / KELLY / DRAWDOWN / TAX ============
 function answerQuiz(q, a) {
+    riskLabTouched = true;
   quizAnswers[q] = a;
 
   const questions = document.querySelectorAll('#quiz-area > .quiz-q');
