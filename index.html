@@ -477,6 +477,30 @@ body.light-mode .target-mode-btn {
   </div>
 </div>
 
+<div class="asset-chart-stage" id="asset-chart-stage" style="display:none">
+  <div class="asset-chart-head">
+    <div>
+      <div class="asset-chart-title" id="asset-chart-title">Chart</div>
+      <div class="asset-chart-sub" id="asset-chart-sub">Zeitraum auswählen</div>
+    </div>
+  </div>
+
+  <div class="chart-range-row">
+    <button class="chart-range-btn active" onclick="setAssetChartRange('1d')">1D</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('1w')">1W</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('1m')">1M</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('1y')">1Y</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('yoy')">YoY</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('3y')">3Y</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('5y')">5Y</button>
+    <button class="chart-range-btn" onclick="setAssetChartRange('max')">Max</button>
+  </div>
+
+  <div class="asset-chart-wrap">
+    <canvas id="asset-main-chart"></canvas>
+  </div>
+</div>
+  
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('strategy')">🎯 Strategien</button>
   <button class="tab-btn" onclick="switchTab('builder')">🔨 Trade Builder</button>
