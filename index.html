@@ -189,6 +189,41 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 footer { text-align: center; padding: 24px 20px; font-family: var(--mono); font-size: 10px; color: var(--muted); border-top: 1px solid var(--border); line-height: 1.8; margin-top: 20px; }
 .btn-reset { background: var(--s3); cursor: pointer; text-align: center; font-weight: 700; color: var(--cyan); padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: var(--body); font-size: 13px; }
 
+
+  /* CHART OVERLAY CONTROLS */
+.overlay-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.overlay-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.overlay-option:hover {
+  border-color: var(--cyan);
+}
+
+.overlay-option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.overlay-option span {
+  flex: 1;
+}
 /* TECHNICAL ANALYSIS */
 .ta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .ta-card { background: var(--s3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
