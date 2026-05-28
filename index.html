@@ -1535,6 +1535,38 @@ async function addCustomTicker() {
   document.getElementById('search-results').style.display = 'none';
 }
 
+function showEmptyAssetState() {
+  document.getElementById('sel-name').textContent = 'Basiswert auswählen';
+  document.getElementById('sel-ticker').textContent = 'Suche oben nach Aktie, Index, Rohstoff oder Krypto';
+  document.getElementById('sel-price').textContent = '—';
+  document.getElementById('sel-change').textContent = '';
+  document.getElementById('sel-change').className = 'sel-change';
+
+  document.getElementById('m-high').textContent = '—';
+  document.getElementById('m-low').textContent = '—';
+  document.getElementById('m-vola').textContent = '—';
+  document.getElementById('m-range').textContent = '—';
+
+  document.getElementById('strategy-list').innerHTML = `
+    <div class="warn">
+      Wähle zuerst einen Basiswert aus. Danach werden technisches Bild, Strategie-Fit und Trade Builder für diesen Wert geladen.
+    </div>
+  `;
+
+  const taSummary = document.getElementById('ta-summary-wrap');
+  if (taSummary) {
+    taSummary.innerHTML = '<div class="warn">Wähle zuerst einen Basiswert aus, um die technische Analyse zu laden.</div>';
+  }
+
+  const taIndicators = document.getElementById('ta-indicators');
+  if (taIndicators) taIndicators.innerHTML = '';
+
+  const taInterpretation = document.getElementById('ta-interpretation');
+  if (taInterpretation) taInterpretation.innerHTML = '';
+
+  resetBuilder();
+}
+  
 function selectAsset(t) {
   currentAsset = ASSETS.find(a => a.ticker === t) || ASSETS[0];
 
