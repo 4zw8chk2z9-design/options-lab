@@ -3593,6 +3593,12 @@ function drawAssetMainChart() {
   const d = assetData[currentAsset.ticker] || {};
   const allCloses = d.closes || [];
 
+  const showMA50 = chartAnalysisEnabled && document.getElementById('overlay-ma50')?.checked;
+  const showMA200 = chartAnalysisEnabled && document.getElementById('overlay-ma200')?.checked;
+  const show52W = chartAnalysisEnabled && document.getElementById('overlay-52w')?.checked;
+  const showSupport = chartAnalysisEnabled && document.getElementById('overlay-support')?.checked;
+  const showChannel = chartAnalysisEnabled && document.getElementById('overlay-channel')?.checked;
+  
   const ctx = canvas.getContext('2d');
 
   const dpr = window.devicePixelRatio || 1;
