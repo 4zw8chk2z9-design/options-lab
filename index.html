@@ -61,6 +61,12 @@ nav {
 }
 .cat-btn.active { background: var(--purple); border-color: var(--purple); color: white; }
 .asset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+  
+  /* ===== Compact Asset Search Mode ===== */
+.category-row,
+.asset-grid {
+  display: none;
+}
 .asset-card {
   background: var(--s2); border: 1px solid var(--border); border-radius: 10px;
   padding: 10px 12px; cursor: pointer; position: relative; overflow: hidden;
