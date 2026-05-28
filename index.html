@@ -3537,6 +3537,33 @@ function renderTA() {
   document.getElementById('ta-interpretation').innerHTML = interp;
 }
 
+function toggleChartAnalysis() {
+  chartAnalysisEnabled = !chartAnalysisEnabled;
+
+  const options = document.getElementById('overlay-options');
+  const btn = document.getElementById('chart-analysis-toggle');
+
+  if (options) {
+    options.classList.toggle('disabled', !chartAnalysisEnabled);
+  }
+
+  document.querySelectorAll('#overlay-options input').forEach(input => {
+    input.disabled = !chartAnalysisEnabled;
+
+    if (chartAnalysisEnabled) {
+      input.checked = true;
+    }
+  });
+
+  if (btn) {
+    btn.textContent = chartAnalysisEnabled
+      ? 'Chart-Analyse deaktivieren'
+      : 'Chart-Analyse aktivieren';
+  }
+
+  drawAssetMainChart();
+}
+  
 function setAssetChartRange(range) {
   assetChartRange = range;
 
