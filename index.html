@@ -724,40 +724,70 @@ body.light-mode .target-mode-btn {
     <div class="explain">
       <div class="explain-title">💡 Was macht diese Ansicht?</div>
       <p>
-        Die technische Analyse wird nicht mehr in einem separaten Chart angezeigt, sondern als Overlay im großen Hauptchart.
-        Du kannst einzelne Analyse-Bausteine aktivieren oder ausblenden.
+        Die Chart-Analyse legt technische Hilfslinien direkt über den großen Hauptchart.
+        So siehst du Trend, Unterstützungen, Widerstände und gleitende Durchschnitte im gleichen Kursbild.
+      </p>
+      <p style="margin-top:8px">
+        Die Analyse ist standardmäßig ausgeschaltet, damit der Chart nicht überladen wirkt.
+        Wenn du sie aktivierst, werden zunächst alle Analyse-Bausteine eingeblendet.
       </p>
     </div>
 
-    <div class="overlay-options">
+    <button class="btn-reset" id="chart-analysis-toggle" onclick="toggleChartAnalysis()" style="margin-bottom:12px">
+      Chart-Analyse aktivieren
+    </button>
+
+    <div class="overlay-options disabled" id="overlay-options">
       <label class="overlay-option">
-        <input type="checkbox" id="overlay-ma50" checked onchange="drawAssetMainChart()">
+        <input type="checkbox" id="overlay-ma50" checked disabled onchange="drawAssetMainChart()">
         <span>MA50 anzeigen</span>
       </label>
 
       <label class="overlay-option">
-        <input type="checkbox" id="overlay-ma200" checked onchange="drawAssetMainChart()">
+        <input type="checkbox" id="overlay-ma200" checked disabled onchange="drawAssetMainChart()">
         <span>MA200 anzeigen</span>
       </label>
 
       <label class="overlay-option">
-        <input type="checkbox" id="overlay-52w" checked onchange="drawAssetMainChart()">
+        <input type="checkbox" id="overlay-52w" checked disabled onchange="drawAssetMainChart()">
         <span>52W Hoch/Tief anzeigen</span>
       </label>
 
       <label class="overlay-option">
-        <input type="checkbox" id="overlay-support" checked onchange="drawAssetMainChart()">
+        <input type="checkbox" id="overlay-support" checked disabled onchange="drawAssetMainChart()">
         <span>Support / Resistance anzeigen</span>
       </label>
 
       <label class="overlay-option">
-        <input type="checkbox" id="overlay-channel" checked onchange="drawAssetMainChart()">
+        <input type="checkbox" id="overlay-channel" checked disabled onchange="drawAssetMainChart()">
         <span>Trendkanal anzeigen</span>
       </label>
     </div>
-  </div>
-  
-  <!-- RSI -->
+
+    <div class="explain" style="margin-top:12px">
+      <div class="explain-title">🧠 Chart-Analyse verstehen</div>
+      <p>
+        <strong>MA50</strong> zeigt den mittelfristigen Trend der letzten 50 Handelstage.
+        Liegt der Kurs darüber, spricht das eher für kurzfristige Stärke.
+      </p>
+      <p style="margin-top:8px">
+        <strong>MA200</strong> zeigt den langfristigen Trend. Viele Marktteilnehmer nutzen diese Linie als Orientierung,
+        ob ein Basiswert langfristig eher im Aufwärts- oder Abwärtstrend liegt.
+      </p>
+      <p style="margin-top:8px">
+        <strong>52W Hoch/Tief</strong> zeigt, wo der Kurs im Vergleich zum letzten Jahr steht.
+        Nähe zum Hoch kann auf Widerstand hindeuten, Nähe zum Tief auf mögliche Unterstützung.
+      </p>
+      <p style="margin-top:8px">
+        <strong>Support / Resistance</strong> beschreibt Kurszonen, an denen der Kurs in der Vergangenheit öfter gedreht hat.
+        Support ist eine mögliche Unterstützungszone, Resistance eine mögliche Widerstandszone.
+      </p>
+      <p style="margin-top:8px">
+        <strong>Trendkanal</strong> zeigt eine mögliche langfristige Bewegungsrichtung.
+        Die obere Linie kann als Widerstand, die untere als Unterstützung interpretiert werden.
+      </p>
+    </div>
+  </div>  <!-- RSI -->
   <div class="card" id="ta-rsi-card">
     <div class="card-head">📊 RSI – Relative Strength Index</div>
     <div id="ta-rsi-value-wrap" style="margin-bottom:14px"></div>
