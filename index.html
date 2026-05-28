@@ -1696,10 +1696,29 @@ function selectAsset(t) {
     loadLiveQuoteForCurrentAsset();
   }
 
+   const chartStage = document.getElementById('asset-chart-stage');
+  if (chartStage) {
+    chartStage.style.display = 'block';
+  }
+
+  const chartTitle = document.getElementById('asset-chart-title');
+  if (chartTitle) {
+    chartTitle.textContent = currentAsset.name + ' Chart';
+  }
+
+  const chartSub = document.getElementById('asset-chart-sub');
+  if (chartSub) {
+    chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + assetChartRange.toUpperCase();
+  }
+
   rankStrategies();
   resetBuilder();
   renderTA();
   loadHistoryForCurrentAsset();
+
+  setTimeout(() => {
+    drawAssetMainChart();
+  }, 300);
 }
 
 function updateSelected() {
