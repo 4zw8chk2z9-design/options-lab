@@ -3438,6 +3438,7 @@ function drawTAChart(closes, ma50val, ma200val) {
 function calcRiskAssistant() {
     syncAppStateFromInputs();
   const total = +document.getElementById('ra-total').value || 5000;
+    syncTradingCapitalInputs(total);
   const prof = +document.getElementById('ra-prof').value;
   const sl = +document.getElementById('ra-sl').value || 50;
   const wr = +document.getElementById('ra-wr').value || 40;
