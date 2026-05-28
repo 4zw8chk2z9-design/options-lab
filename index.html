@@ -3736,13 +3736,14 @@ function calcKelly() {
   }
 }
 function calcDrawdown() {
-syncTradingCapitalInputs(cap, 'dd-cap');
+  syncAppStateFromInputs();
+
   const cap = +document.getElementById('dd-cap').value || 1000;
   syncTradingCapitalInputs(cap, 'dd-cap');
 
   const risk = +document.getElementById('dd-risk').value;
   const n = +document.getElementById('dd-n').value;
-
+  
   document.getElementById('dd-risk-v').textContent = risk + '%';
   document.getElementById('dd-n-v').textContent = n;
 
