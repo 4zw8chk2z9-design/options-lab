@@ -3444,7 +3444,173 @@ function renderTA() {
   document.getElementById('ta-interpretation').innerHTML = interp;
 }
 
+function setAssetChartRange(range) {
+  assetChartRange = range;
 
+  document.querySelectorAll('.chart-range-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  const buttons = document.querySelectorAll('.chart-range-btn');
+  buttons.forEach(btn => {
+    if (btn.textContent.toLowerCase() === range.toLowerCase()) {
+      btn.classList.add('active');
+    }
+  });
+
+  const chartSub = document.getElementById('asset-chart-sub');
+  if (chartSub && currentAsset) {
+    chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + range.toUpperCase();
+  }
+
+  drawAssetMainChart();
+}
+
+function drawAssetMainChart() {
+  const canvas = document.getElementById('asset-main-chart');
+  if (!canvas || !currentAsset) return;
+
+  const d = assetData[currentAsset.ticker] || {};
+  const allCloses = d.closes || [];
+
+  const ctx = canvas.getContext('2d');
+
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.offsetWidth;
+  const cssHeight = 230;
+
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.height = cssHeight + 'px';
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  if (!allCloses.length) {
+    ctx.fillStyle = '#6a6a8a';
+    ctx.font = '12px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('Chartdaten werden geladen ...', cssWidth / 2, cssHeight / 2);
+    return;
+  }
+
+  let count = allCloses.length;
+
+  if (assetChartRange === '1d') count = Math.min(2, allCloses.length);
+  if (assetChartRange === '1w') count = Math.min(5, allCloses.length);
+  if (assetChartRange === '1m') count = Math.min(22, allCloses.length);
+  if (assetChartRange === '1y') count = Math.min(252, allCloses.length);
+  if (assetChartRange === 'yoy') count = Math.min(504, allCloses.length);
+  if (assetChartRange === '3y') count = Math.min(756, allCloses.length);
+  if (assetChartRange === '5y') count = Math.min(1260, allCloses.length);
+  if (assetChartRange === 'max') count = allCloses.length;
+
+  const closes = allCloses.slice(-count);
+
+  if (closes.length < 2) {
+    ctx.fillStyle = '#6a6a8a';
+    ctx.font = '12px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('Für diesen Zeitraum sind noch zu wenig Daten vorhanden.', cssWidth / 2, cssHeight / 2);
+    return;
+  }
+
+  const W = cssWidth;
+  const H = cssHeight;
+  const padL = 52;
+  const padR = 18;
+  const padT = 20;
+  const padB = 30;
+
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  let minV = Math.min(...closes);
+  let maxV = Math.max(...closes);
+
+  const padding = (maxV - minV) * 0.08 || maxV * 0.02 || 1;
+  minV -= padding;
+  maxV += padding;
+
+  const range = maxV - minV || 1;
+
+  const toX = i => padL + (i / (closes.length - 1)) * chartW;
+  const toY = v => padT + (1 - ((v - minV) / range)) * chartH;
+
+  ctx.font = '9px IBM Plex Mono';
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * chartH;
+    const value = maxV - (i / 4) * range;
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.moveTo(padL, y);
+    ctx.lineTo(W - padR, y);
+    ctx.stroke();
+
+    ctx.fillStyle = '#6a6a8a';
+    ctx.textAlign = 'right';
+    ctx.fillText(value.toFixed(2), padL - 8, y + 3);
+  }
+
+  const first = closes[0];
+  const last = closes[closes.length - 1];
+  const perf = ((last / first - 1) * 100);
+  const positive = perf >= 0;
+
+  const gradient = ctx.createLinearGradient(0, padT, 0, H - padB);
+  gradient.addColorStop(0, positive ? 'rgba(0,230,118,0.18)' : 'rgba(255,61,61,0.18)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.beginPath();
+  closes.forEach((c, i) => {
+    const x = toX(i);
+    const y = toY(c);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(toX(closes.length - 1), H - padB);
+  ctx.lineTo(toX(0), H - padB);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  ctx.beginPath();
+  closes.forEach((c, i) => {
+    const x = toX(i);
+    const y = toY(c);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.strokeStyle = positive ? '#00e676' : '#ff3d3d';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const lastX = toX(closes.length - 1);
+  const lastY = toY(last);
+
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = positive ? '#00e676' : '#ff3d3d';
+  ctx.fill();
+
+  ctx.fillStyle = positive ? '#00e676' : '#ff3d3d';
+  ctx.font = '11px IBM Plex Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText((positive ? '+' : '') + perf.toFixed(2) + '%', padL, 12);
+
+  ctx.fillStyle = '#6a6a8a';
+  ctx.font = '9px IBM Plex Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText('Start', padL, H - 8);
+
+  ctx.textAlign = 'right';
+  ctx.fillText('Heute', W - padR, H - 8);
+}
+  
 function drawTAChart(closes, ma50val, ma200val) {
   const canvas = document.getElementById('ta-chart');
   const ctx = canvas.getContext('2d');
