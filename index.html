@@ -224,6 +224,18 @@ footer { text-align: center; padding: 24px 20px; font-family: var(--mono); font-
 .overlay-option span {
   flex: 1;
 }
+
+.overlay-options.disabled {
+  opacity: 0.45;
+}
+
+.overlay-options.disabled .overlay-option {
+  cursor: not-allowed;
+}
+
+.overlay-options.disabled .overlay-option:hover {
+  border-color: var(--border);
+}
 /* TECHNICAL ANALYSIS */
 .ta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .ta-card { background: var(--s3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
