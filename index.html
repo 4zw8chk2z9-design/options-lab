@@ -2067,8 +2067,8 @@ function rankStrategies() {
     };
   }).sort((a, b) => b.score - a.score);
 
-  document.getElementById('strategy-list').innerHTML = dataHint + ranked.map((s, i) => `
-    <div class="strategy-card ${i === 0 ? 'recommended' : ''}" onclick="toggleStrategyDetails('${s.id}')">
+document.getElementById('strategy-list').innerHTML = dataHint + riskHint + ranked.map((s, i) => `
+<div class="strategy-card ${i === 0 ? 'recommended' : ''}" onclick="toggleStrategyDetails('${s.id}')">
       <div class="strat-head">
         <div class="strat-emoji">${s.emoji}</div>
         <div class="strat-info">
