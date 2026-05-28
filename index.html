@@ -3629,9 +3629,11 @@ function resetQuiz() {
 }
 
 function calcKelly() {
-syncTradingCapitalInputs(cap, 'kelly-cap');
+  syncAppStateFromInputs();
+
   const cap = +document.getElementById('kelly-cap').value || 1000;
-    syncTradingCapitalInputs(cap);
+  syncTradingCapitalInputs(cap, 'kelly-cap');
+
   const wr = +document.getElementById('kelly-wr').value / 100;
   const winPct = +document.getElementById('kelly-win').value / 100;
   const lossPct = +document.getElementById('kelly-loss').value / 100;
