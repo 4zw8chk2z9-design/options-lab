@@ -3472,6 +3472,7 @@ function drawTAChart(closes, ma50val, ma200val) {
 
 // ============ RISK ASSISTANT ============
 function calcRiskAssistant() {
+    riskLabTouched = true;
     syncAppStateFromInputs();
   const total = +document.getElementById('ra-total').value || 5000;
 syncTradingCapitalInputs(total, 'ra-total');
