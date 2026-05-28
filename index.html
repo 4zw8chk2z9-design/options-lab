@@ -1260,25 +1260,7 @@ let legIdCounter = 0;
   }
 };
 
-  function syncAppStateFromInputs() {
-    function syncTradingCapitalInputs(value) {
-  const capital = Number(value) || 5000;
-
-  const kellyCap = document.getElementById('kelly-cap');
-  const ddCap = document.getElementById('dd-cap');
-
-  if (kellyCap && document.activeElement !== kellyCap) {
-    kellyCap.value = capital;
-  }
-
-  if (ddCap && document.activeElement !== ddCap) {
-    ddCap.value = capital;
-  }
-
-  appState.risk.tradingCapital = capital;
-  appState.risk.kellyCapital = capital;
-  appState.risk.drawdownCapital = capital;
-}
+function syncAppStateFromInputs() {
   appState.strategy.marketView = marketView;
   appState.strategy.expectedMove = +document.getElementById('move')?.value || 15;
   appState.strategy.volatilityView = +document.getElementById('vol')?.value || 0;
@@ -1300,6 +1282,24 @@ let legIdCounter = 0;
   appState.risk.drawdownLossTrades = +document.getElementById('dd-n')?.value || 5;
 }
 
+function syncTradingCapitalInputs(value, sourceId) {
+  const capital = Number(value) || 5000;
+
+  const ids = ['ra-total', 'kelly-cap', 'dd-cap'];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+
+    if (!el) return;
+    if (id === sourceId) return;
+
+    el.value = capital;
+  });
+
+  appState.risk.tradingCapital = capital;
+  appState.risk.kellyCapital = capital;
+  appState.risk.drawdownCapital = capital;
+}
 // ============ FETCH ============
 async function fetchPrice(asset) {
   try {
