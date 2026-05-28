@@ -682,7 +682,46 @@ body.light-mode .target-mode-btn {
   <!-- OVERALL SIGNAL -->
   <div id="ta-summary-wrap"></div>
 
+  <!-- CHART OVERLAYS -->
+  <div class="card">
+    <div class="card-head">📈 Chart-Analyse im Hauptchart</div>
 
+    <div class="explain">
+      <div class="explain-title">💡 Was macht diese Ansicht?</div>
+      <p>
+        Die technische Analyse wird nicht mehr in einem separaten Chart angezeigt, sondern als Overlay im großen Hauptchart.
+        Du kannst einzelne Analyse-Bausteine aktivieren oder ausblenden.
+      </p>
+    </div>
+
+    <div class="overlay-options">
+      <label class="overlay-option">
+        <input type="checkbox" id="overlay-ma50" checked onchange="drawAssetMainChart()">
+        <span>MA50 anzeigen</span>
+      </label>
+
+      <label class="overlay-option">
+        <input type="checkbox" id="overlay-ma200" checked onchange="drawAssetMainChart()">
+        <span>MA200 anzeigen</span>
+      </label>
+
+      <label class="overlay-option">
+        <input type="checkbox" id="overlay-52w" checked onchange="drawAssetMainChart()">
+        <span>52W Hoch/Tief anzeigen</span>
+      </label>
+
+      <label class="overlay-option">
+        <input type="checkbox" id="overlay-support" checked onchange="drawAssetMainChart()">
+        <span>Support / Resistance anzeigen</span>
+      </label>
+
+      <label class="overlay-option">
+        <input type="checkbox" id="overlay-channel" checked onchange="drawAssetMainChart()">
+        <span>Trendkanal anzeigen</span>
+      </label>
+    </div>
+  </div>
+  
   <!-- RSI -->
   <div class="card" id="ta-rsi-card">
     <div class="card-head">📊 RSI – Relative Strength Index</div>
