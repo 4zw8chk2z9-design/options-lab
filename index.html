@@ -1423,7 +1423,7 @@ function renderAssets() {
     const live = quoteCache[a.ticker];
     const display = live || d;
 
-    const sel = currentAsset.ticker === a.ticker;
+const sel = currentAsset?.ticker === a.ticker;
     const price = display.price ? Number(display.price).toFixed(2) : '...';
     const change = display.change !== undefined && display.change !== null ? Number(display.change) : null;
 
