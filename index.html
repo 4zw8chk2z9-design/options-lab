@@ -3631,6 +3631,7 @@ function resetQuiz() {
 function calcKelly() {
     syncAppStateFromInputs();
   const cap = +document.getElementById('kelly-cap').value || 1000;
+    syncTradingCapitalInputs(cap);
   const wr = +document.getElementById('kelly-wr').value / 100;
   const winPct = +document.getElementById('kelly-win').value / 100;
   const lossPct = +document.getElementById('kelly-loss').value / 100;
@@ -3734,6 +3735,7 @@ function calcKelly() {
 }
 function calcDrawdown() {
   const cap = +document.getElementById('dd-cap').value || 1000;
+    syncTradingCapitalInputs(cap);
   const risk = +document.getElementById('dd-risk').value;
   const n = +document.getElementById('dd-n').value;
 
