@@ -79,8 +79,12 @@ nav {
 .asset-change { font-family: var(--mono); font-size: 10px; margin-top: 2px; }
 .asset-change.up { color: var(--green); }
 .asset-change.down { color: var(--red); }
-.selected-asset { padding: 16px 20px; background: linear-gradient(135deg, var(--s2), var(--s1)); border-bottom: 1px solid var(--border); }
-.sel-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.selected-asset {
+  padding: 20px;
+  background: linear-gradient(135deg, var(--s2), var(--s1));
+  border-bottom: 1px solid var(--border);
+}
+  .sel-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
 .sel-name { font-family: var(--display); font-size: 24px; letter-spacing: 1.5px; line-height: 1; }
 .sel-ticker { font-family: var(--mono); font-size: 10px; color: var(--muted2); letter-spacing: 1.5px; margin-top: 4px; }
 .sel-price { font-family: var(--display); font-size: 30px; letter-spacing: 1px; color: var(--cyan); }
