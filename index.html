@@ -3849,6 +3849,68 @@ function calcDrawdown() {
     renderRiskFit();
   }
 }
+
+function getRiskFitSnapshot() {
+  syncAppStateFromInputs();
+
+  const r = appState.risk;
+
+  const tradingCapital = Number(r.tradingCapital) || 5000;
+  const riskProfile = Number(r.riskProfile) || 2;
+  const stopLoss = Number(r.stopLoss) || 50;
+
+  const kellyCapital = Number(r.kellyCapital) || tradingCapital;
+  const kellyWinRate = Number(r.kellyWinRate) || 45;
+  const avgWin = Number(r.avgWin) || 200;
+  const avgLoss = Number(r.avgLoss) || 100;
+
+  const drawdownRisk = Number(r.drawdownRisk) || 5;
+  const drawdownLossTrades = Number(r.drawdownLossTrades) || 5;
+
+  const riskPct = [0, 1, 2, 5][riskProfile] || 2;
+  const maxLossEuro = tradingCapital * (riskPct / 100);
+  const positionByStop = maxLossEuro / (stopLoss / 100);
+
+  const wr = kellyWinRate / 100;
+  const win = avgWin / 100;
+  const loss = avgLoss / 100;
+
+  const b = loss > 0 ? win / loss : 0;
+  const fullKelly = b > 0 ? (wr * b - (1 - wr)) / b : 0;
+  const quarterKellyEuro = kellyCapital * Math.max(0, fullKelly / 4);
+
+  const finalPosition = quarterKellyEuro > 0
+    ? Math.min(positionByStop, quarterKellyEuro)
+    : positionByStop;
+
+  const ddAfterLosses = tradingCapital * Math.pow(1 - drawdownRisk / 100, drawdownLossTrades);
+  const ddLossPct = ((tradingCapital - ddAfterLosses) / tradingCapital) * 100;
+
+  let riskFitLabel = 'MITTEL';
+  let riskFitClass = 'warn-c';
+
+  if (ddLossPct < 15 && finalPosition <= positionByStop && riskPct <= 2) {
+    riskFitLabel = 'KONTROLLIERT';
+    riskFitClass = 'pos';
+  } else if (ddLossPct >= 35 || riskPct >= 5) {
+    riskFitLabel = 'KRITISCH';
+    riskFitClass = 'neg';
+  }
+
+  return {
+    tradingCapital,
+    riskProfile,
+    riskPct,
+    maxLossEuro,
+    positionByStop,
+    quarterKellyEuro,
+    finalPosition,
+    ddLossPct,
+    riskFitLabel,
+    riskFitClass
+  };
+}
+  
 function renderRiskFit() {
   syncAppStateFromInputs();
 
