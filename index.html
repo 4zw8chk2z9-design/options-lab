@@ -3610,6 +3610,29 @@ function setAssetChartRange(range) {
   drawAssetMainChart();
 }
 
+function clearAssetMainChart(message = 'Chartdaten werden geladen ...') {
+  const canvas = document.getElementById('asset-main-chart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.offsetWidth || 600;
+  const cssHeight = 185;
+
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.height = cssHeight + 'px';
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  ctx.fillStyle = '#6a6a8a';
+  ctx.font = '12px IBM Plex Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(message, cssWidth / 2, cssHeight / 2);
+}
+  
 function drawAssetMainChart() {
   const canvas = document.getElementById('asset-main-chart');
   if (!canvas || !currentAsset) return;
