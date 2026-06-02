@@ -1572,6 +1572,67 @@ async function fetchPrice(asset) {
   return false;
 }
 
+function getHistoryCacheKey(ticker) {
+  return 'optionsLabHistory_' + ticker;
+}
+
+function saveHistoryToCache(ticker, historyData) {
+  if (!ticker || !historyData || !historyData.closes || historyData.closes.length < 2) return;
+
+  const payload = {
+    ...historyData,
+    cachedAt: new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem(getHistoryCacheKey(ticker), JSON.stringify(payload));
+  } catch (e) {
+    console.warn('History cache save failed:', e);
+  }
+}
+
+function loadHistoryFromCache(ticker) {
+  if (!ticker) return null;
+
+  try {
+    const raw = localStorage.getItem(getHistoryCacheKey(ticker));
+    if (!raw) return null;
+
+    const cached = JSON.parse(raw);
+
+    if (!cached || !cached.closes || cached.closes.length < 2) return null;
+
+    return cached;
+  } catch (e) {
+    console.warn('History cache load failed:', e);
+    return null;
+  }
+}
+
+function applyHistoryDataToAsset(ticker, data, sourceLabel = 'api') {
+  if (!ticker || !data) return;
+
+  if (!assetData[ticker]) {
+    assetData[ticker] = {};
+  }
+
+  assetData[ticker] = {
+    ...assetData[ticker],
+    high52: data.high52,
+    low52: data.low52,
+    vola52: data.vola52,
+    vola30: data.vola30,
+    vola90: data.vola90,
+    closes: data.closes || [],
+    history: data.history || [],
+    historyProvider: data.provider || data.historyProvider || sourceLabel,
+    historyLoaded: true,
+    historySymbol: ticker,
+    historyCachedAt: data.cachedAt || null,
+    historySourceLabel: sourceLabel
+  };
+}
+  
 function getDateStr(daysOffset) {
   const d = new Date();
   d.setDate(d.getDate() + daysOffset);
