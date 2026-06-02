@@ -1783,7 +1783,7 @@ function showEmptyAssetState() {
 function selectAsset(t) {
     clearAssetSearch();
   currentAsset = ASSETS.find(a => a.ticker === t) || ASSETS[0];
-
+clearAssetMainChart('Chartdaten werden geladen ...');
   renderAssets();
 
   const cachedQuote = quoteCache[currentAsset.ticker];
