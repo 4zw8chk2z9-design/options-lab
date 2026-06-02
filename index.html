@@ -1895,9 +1895,11 @@ function selectAsset(t) {
   }
 
   const chartSub = document.getElementById('asset-chart-sub');
-  if (chartSub) {
-    chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + assetChartRange.toUpperCase();
-  }
+if (chartSub && currentAsset) {
+  const d = assetData[currentAsset.ticker] || {};
+  const cacheNote = d.historySourceLabel === 'cache' ? ' · History aus Cache' : '';
+  chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + range.toUpperCase() + cacheNote;
+}
 
   rankStrategies();
   resetBuilder();
