@@ -1695,6 +1695,17 @@ function updateAssetCard(ticker) {
   }
 }
 
+function clearAssetSearch() {
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+
+  if (input) input.value = '';
+  if (results) {
+    results.innerHTML = '';
+    results.style.display = 'none';
+  }
+}
+  
 function searchAssets() {
   const q = document.getElementById('search-input').value.toUpperCase();
   if (q.length < 1) {
