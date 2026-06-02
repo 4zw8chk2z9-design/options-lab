@@ -3863,6 +3863,45 @@ const padding = (maxV - minV) * 0.08 || maxV * 0.02 || 1;
   ctx.lineWidth = 2;
   ctx.stroke();
 
+function drawOverlayLine(values, color, label) {
+  const validValues = values
+    .map((v, i) => ({ v, i }))
+    .filter(p => p.v !== null && Number.isFinite(p.v));
+
+  if (validValues.length < 2) return;
+
+  ctx.beginPath();
+
+  validValues.forEach((p, idx) => {
+    const x = toX(p.i);
+    const y = toY(p.v);
+
+    if (idx === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const lastPoint = validValues[validValues.length - 1];
+
+  ctx.fillStyle = color;
+  ctx.font = '9px IBM Plex Mono';
+  ctx.textAlign = 'right';
+  ctx.fillText(label + ' ' + lastPoint.v.toFixed(2), W - padR, toY(lastPoint.v) - 5);
+}
+
+if (showMA50) {
+  drawOverlayLine(ma50Visible, '#ffcc00', 'MA50');
+}
+
+if (showMA200) {
+  drawOverlayLine(ma200Visible, '#ff7c00', 'MA200');
+}
+  
   const lastX = toX(closes.length - 1);
   const lastY = toY(last);
 
