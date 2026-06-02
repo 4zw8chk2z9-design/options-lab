@@ -1781,6 +1781,7 @@ function showEmptyAssetState() {
 }
   
 function selectAsset(t) {
+    clearAssetSearch();
   currentAsset = ASSETS.find(a => a.ticker === t) || ASSETS[0];
 
   renderAssets();
