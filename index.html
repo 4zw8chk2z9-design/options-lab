@@ -1842,9 +1842,19 @@ function showEmptyAssetState() {
 }
   
 function selectAsset(t) {
-    clearAssetSearch();
+  clearAssetSearch();
+
   currentAsset = ASSETS.find(a => a.ticker === t) || ASSETS[0];
-clearAssetMainChart('Chartdaten werden geladen ...');
+
+  const cachedHistory = loadHistoryFromCache(currentAsset.ticker);
+
+  if (cachedHistory) {
+    applyHistoryDataToAsset(currentAsset.ticker, cachedHistory, 'cache');
+    drawAssetMainChart();
+  } else {
+    clearAssetMainChart('Chartdaten werden geladen ...');
+  }
+
   renderAssets();
 
   const cachedQuote = quoteCache[currentAsset.ticker];
