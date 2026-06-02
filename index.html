@@ -3674,9 +3674,11 @@ function setAssetChartRange(range) {
   });
 
   const chartSub = document.getElementById('asset-chart-sub');
-  if (chartSub && currentAsset) {
-    chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + range.toUpperCase();
-  }
+if (chartSub) {
+  const d = assetData[currentAsset.ticker] || {};
+  const cacheNote = d.historySourceLabel === 'cache' ? ' · History aus Cache' : '';
+  chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + assetChartRange.toUpperCase() + cacheNote;
+}
 
   drawAssetMainChart();
 }
