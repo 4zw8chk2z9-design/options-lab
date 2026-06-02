@@ -3671,8 +3671,8 @@ function setAssetChartRange(range) {
     }
   });
 
-  const chartSub = document.getElementById('asset-chart-sub');
-if (chartSub) {
+const chartSub = document.getElementById('asset-chart-sub');
+if (chartSub && currentAsset) {
   const d = assetData[currentAsset.ticker] || {};
   const cacheNote = d.historySourceLabel === 'cache' ? ' · History aus Cache' : '';
   chartSub.textContent = currentAsset.ticker + ' · Zeitraum: ' + assetChartRange.toUpperCase() + cacheNote;
