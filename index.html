@@ -3667,8 +3667,6 @@ const cssHeight = 185;
   }
 
   let count = allCloses.length;
-
-  if (assetChartRange === '1d') count = Math.min(2, allCloses.length);
   if (assetChartRange === '1w') count = Math.min(5, allCloses.length);
   if (assetChartRange === '1m') count = Math.min(22, allCloses.length);
   if (assetChartRange === '1y') count = Math.min(252, allCloses.length);
