@@ -4813,18 +4813,27 @@ if (Number(data.changePercent) > 0) {
       assetData[ticker] = {};
     }
 
-    assetData[ticker] = {
-      ...assetData[ticker],
-      // Wichtig: price hier NICHT setzen, sonst überschreibt History den Live-Kurs
-      high52: data.high52,
-      low52: data.low52,
-      vola52: data.vola52,
-      vola30: data.vola30,
-      vola90: data.vola90,
-      closes: data.closes,
-      history: data.history,
-      historyProvider: data.provider
-    };
+   applyHistoryDataToAsset(ticker, {
+  high52: data.high52,
+  low52: data.low52,
+  vola52: data.vola52,
+  vola30: data.vola30,
+  vola90: data.vola90,
+  closes: data.closes,
+  history: data.history,
+  provider: data.provider
+}, 'api');
+
+saveHistoryToCache(ticker, {
+  high52: data.high52,
+  low52: data.low52,
+  vola52: data.vola52,
+  vola30: data.vola30,
+  vola90: data.vola90,
+  closes: data.closes,
+  history: data.history,
+  provider: data.provider
+});
 
     // Nur die Meta-Werte aktualisieren, nicht den großen Live-Kurs überschreiben
     if (currentAsset?.ticker === ticker) {
