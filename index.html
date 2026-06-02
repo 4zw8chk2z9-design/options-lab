@@ -4853,7 +4853,18 @@ saveHistoryToCache(ticker, {
       autoSetMarketViewFromTA();
     }
   } catch (error) {
-    console.warn("History load failed:", error);
+  console.warn("History load failed:", error);
+
+  const ticker = currentAsset?.ticker;
+  const cachedHistory = loadHistoryFromCache(ticker);
+
+  if (cachedHistory) {
+    applyHistoryDataToAsset(ticker, cachedHistory, 'cache');
+    updateSelected();
+    renderTA();
+    drawAssetMainChart();
+  } else {
+    clearAssetMainChart('Keine historischen Daten verfügbar.');
   }
 }
 
