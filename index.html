@@ -3748,9 +3748,33 @@ if (assetChartRange === '6m') count = Math.min(126, allCloses.length);
   if (assetChartRange === '5y') count = Math.min(1260, allCloses.length);
   if (assetChartRange === 'max') count = allCloses.length;
 
-  const closes = allCloses.slice(-count);
+  
+const startIndex = allCloses.length - count;
+const closes = allCloses.slice(-count);
 
-  if (closes.length < 2) {
+function buildSMAForVisibleRange(period) {
+  return closes.map((_, i) => {
+    const absoluteIndex = startIndex + i;
+
+    if (absoluteIndex + 1 < period) {
+      return null;
+    }
+
+    const slice = allCloses.slice(absoluteIndex + 1 - period, absoluteIndex + 1);
+
+    if (slice.length < period) {
+      return null;
+    }
+
+    return slice.reduce((a, b) => a + b, 0) / period;
+  });
+}
+
+const ma50Visible = showMA50 ? buildSMAForVisibleRange(50) : [];
+const ma200Visible = showMA200 ? buildSMAForVisibleRange(200) : [];
+
+if (closes.length < 2) {
+  
     ctx.fillStyle = '#6a6a8a';
     ctx.font = '12px IBM Plex Mono';
     ctx.textAlign = 'center';
@@ -3768,10 +3792,17 @@ if (assetChartRange === '6m') count = Math.min(126, allCloses.length);
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  let minV = Math.min(...closes);
-  let maxV = Math.max(...closes);
+  const overlayValues = [
+  ...ma50Visible.filter(v => v !== null && Number.isFinite(v)),
+  ...ma200Visible.filter(v => v !== null && Number.isFinite(v))
+];
 
-  const padding = (maxV - minV) * 0.08 || maxV * 0.02 || 1;
+const scaleValues = [...closes, ...overlayValues];
+
+let minV = Math.min(...scaleValues);
+let maxV = Math.max(...scaleValues);
+
+const padding = (maxV - minV) * 0.08 || maxV * 0.02 || 1;
   minV -= padding;
   maxV += padding;
 
