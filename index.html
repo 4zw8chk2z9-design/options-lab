@@ -494,6 +494,16 @@ input[type=range]::-moz-range-thumb {
 .stat-val.neg { color: var(--red); }
 .stat-val.neu { color: var(--accent); }
 .strat-explain { font-size: 12.5px; color: var(--muted2); line-height: 1.65; padding: 12px; background: var(--s3); border: 1px solid var(--border); border-radius: 10px; }
+.strat-expand-hint {
+  display: flex; align-items: center; gap: 7px; margin-top: 12px;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .8px;
+  color: var(--accent); user-select: none;
+}
+.strat-chevron { transition: transform .3s var(--ease); flex-shrink: 0; }
+.strategy-card.open .strat-chevron { transform: rotate(180deg); }
+.strat-hint-hide { display: none; }
+.strategy-card.open .strat-hint-show { display: none; }
+.strategy-card.open .strat-hint-hide { display: inline; }
 
 /* ===================== EXPLAIN (collapsible info) / WARN / DANGER ===================== */
 .explain {
@@ -1463,7 +1473,7 @@ body.light-mode .modal { background: #f6f8fd; }
 
   <!-- INTERPRETATION -->
   <div class="card">
-    <div class="card-head">Gesamtbild & Empfehlung</div>
+    <div class="card-head">Charttechnisches Gesamtbild</div>
     <div id="ta-interpretation"></div>
   </div>
 
@@ -1816,6 +1826,25 @@ const FALLBACK = {
   '^GSPC':5800,'^NDX':20500,'^DJI':42000,'^GDAXI':19500,'^STOXX50E':5000,'^FTSE':8200,'^N225':38000,'^VIX':16,'^RUT':2300
 };
 
+// ============ WÄHRUNG / EINHEIT pro Basiswert ============
+function assetUnit(asset){
+  const tk = (asset && asset.ticker) || '';
+  const cat = (asset && asset.cat) || '';
+  if (cat === 'index' || tk.charAt(0) === '^') return { points: true };
+  if (tk.endsWith('.SW')) return { symbol: 'CHF', post: true };
+  if (tk.endsWith('.L'))  return { symbol: '\u00A3', post: false };
+  if (/\.(DE|PA|AS|MC|MI|BR|LS|HE|VI)$/.test(tk)) return { symbol: '\u20AC', post: true };
+  return { symbol: '$', post: false }; // US-Aktien, Rohstoffe, Krypto, Default
+}
+function fmtPrice(asset, v){
+  const n = Number(v);
+  if (!isFinite(n)) return '\u2013';
+  const u = assetUnit(asset);
+  if (u.points) return n.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' Pkt';
+  const num = n.toFixed(2);
+  return u.post ? (num + '\u00A0' + u.symbol) : (u.symbol + num);
+}
+
 // ============ STRATEGIES ============
 const STRATEGIES = [
   { id: 'long-call', name: 'Long Call', emoji: '', desc: 'Wette auf steigende Kurse', bestFor: ['bull'], volBenefit: 1, timeDecay: -2,
@@ -2107,13 +2136,14 @@ async function fetchPrice(asset) {
     }
   } catch(e) {}
 
-  // Fallback
+  // Fallback: KEINE künstlichen Kurse mehr erzeugen (würden Chart & Vola verfälschen).
+  // Chart/Vola kommen ausschließlich aus /api/history-smart; Live-Preis aus /api/quote-smart.
   const fb = FALLBACK[asset.ticker] || 100;
   assetData[asset.ticker] = {
     price: fb, change: 0,
-    high52: fb * 1.25, low52: fb * 0.75,
-    vola52: 25,
-    closes: generateFakeCloses(fb),
+    high52: null, low52: null,
+    vola52: null,
+    closes: [],
     live: false
   };
   return false;
@@ -2198,22 +2228,25 @@ function generateFakeCloses(start) {
 }
 
 async function loadAll() {
-  let ok = 0;
-  // Load in batches to not overwhelm
-  for (const a of ASSETS) {
-    if (await fetchPrice(a)) ok++;
-  }
- if (ok > ASSETS.length / 2) {
-  document.getElementById('api-dot').classList.add('ok');
-  document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' LIVE · MULTI SOURCE';
-} else if (ok > 0) {
-  document.getElementById('api-text').textContent = ok + '/' + ASSETS.length + ' TEILS LIVE · MULTI SOURCE';
-} else {
-  document.getElementById('api-dot').classList.add('fail');
-  document.getElementById('api-text').textContent = 'LIVE DATA · MULTI SOURCE';
-}
+  // Karten zeichnen und Live-Kurse über den funktionierenden /api/quote-smart-Proxy laden
+  // (der direkte stooq.com-Aufruf scheiterte im Browser an CORS und füllte Fake-Daten).
   renderAssets();
-showEmptyAssetState();
+  showEmptyAssetState();
+
+  await loadVisibleAssetQuotes(ASSETS);
+
+  const ok = Object.keys(quoteCache).length;
+  const dot = document.getElementById('api-dot');
+  const txt = document.getElementById('api-text');
+  if (ok > ASSETS.length / 2) {
+    if (dot) dot.classList.add('ok');
+    if (txt) txt.textContent = ok + '/' + ASSETS.length + ' LIVE · MULTI SOURCE';
+  } else if (ok > 0) {
+    if (txt) txt.textContent = ok + '/' + ASSETS.length + ' TEILS LIVE · MULTI SOURCE';
+  } else {
+    if (dot) dot.classList.add('fail');
+    if (txt) txt.textContent = 'LIVE DATA · MULTI SOURCE';
+  }
 }
 
 function filterCat(c) {
@@ -2415,7 +2448,7 @@ function selectAsset(t) {
     document.getElementById("sel-name").textContent = currentAsset.name;
     document.getElementById("sel-ticker").textContent = currentAsset.ticker + " · " + currentAsset.cat.toUpperCase();
 
-    document.getElementById("sel-price").textContent = "$" + Number(cachedQuote.price).toFixed(2);
+    document.getElementById("sel-price").textContent = fmtPrice(currentAsset, cachedQuote.price);
 
     const changeText = cachedQuote.change !== null && cachedQuote.change !== undefined
       ? (cachedQuote.change >= 0 ? "+" : "") + Number(cachedQuote.change).toFixed(2) + "%"
@@ -2475,7 +2508,7 @@ function updateSelected() {
   const displayChange = live?.change ?? d.change;
 
   if (displayPrice !== undefined && displayPrice !== null) {
-    document.getElementById('sel-price').textContent = "$" + Number(displayPrice).toFixed(2);
+    document.getElementById('sel-price').textContent = fmtPrice(a, displayPrice);
   } else {
     document.getElementById('sel-price').textContent = "Lädt...";
   }
@@ -2854,8 +2887,11 @@ function toggleStrategyDetails(id) {
   document.querySelectorAll('.strategy-details').forEach(d => {
     d.style.display = 'none';
   });
+  document.querySelectorAll('.strategy-card.open').forEach(c => c.classList.remove('open'));
 
   el.style.display = isOpen ? 'none' : 'block';
+  const card = el.closest('.strategy-card');
+  if (card && !isOpen) card.classList.add('open');
 }
 
 function renderStrategyInfo(s) {
@@ -2997,6 +3033,8 @@ WARUM DIESER FIT?
             </div>
           </div>`
         : ''}
+
+      ${s.detailed ? `<div class="strat-expand-hint"><svg class="strat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg><span class="strat-hint-show">Strategie-Wissen anzeigen</span><span class="strat-hint-hide">Strategie-Wissen ausblenden</span></div>` : ''}
 
       ${renderStrategyInfo(s)}
     </div>
@@ -4418,31 +4456,34 @@ function renderTA() {
 
   drawTAChart(closes, ma50, ma200);
 
-  // INTERPRETATION
+  // INTERPRETATION (rein charttechnische Einordnung, keine Anlageempfehlung)
   let interp = `<div style="font-size:13px; color:var(--muted2); line-height:1.8">
-    <strong style="color:var(--text); font-size:14px">${currentAsset.name} – Gesamtbild</strong><br><br>`;
+    <strong style="color:var(--text); font-size:14px">${currentAsset.name} – charttechnisches Gesamtbild</strong><br><br>`;
 
-  if (rsi > 70) interp += `<div style="padding:8px 12px; background:rgba(226,99,112,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--red)">RSI überkauft (${rsi.toFixed(0)})</strong> – Kurs schnell gestiegen. Rücksetzer möglich. Stop-Loss nachziehen.</div>`;
-  else if (rsi < 30) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">RSI überverkauft (${rsi.toFixed(0)})</strong> – Markt überreagiert möglicherweise. Rebound-Potenzial. Interessant für Calls.</div>`;
-  else interp += `<div style="padding:8px 12px; background:var(--s3); border-radius:8px; margin-bottom:8px">RSI neutral (${rsi.toFixed(0)}) – Kein extremes Signal.</div>`;
+  if (rsi > 70) interp += `<div style="padding:8px 12px; background:rgba(226,99,112,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--red)">RSI überkauft (${rsi.toFixed(0)})</strong> – Der Kurs ist in kurzer Zeit stark gestiegen. In der klassischen Charttechnik gilt das als überkauft und geht statistisch häufiger mit kurzfristigen Rücksetzern einher.</div>`;
+  else if (rsi < 30) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">RSI überverkauft (${rsi.toFixed(0)})</strong> – Charttechnisch überverkauft. Lehrbücher beschreiben hier ein erhöhtes Potenzial für eine technische Gegenbewegung.</div>`;
+  else interp += `<div style="padding:8px 12px; background:var(--s3); border-radius:8px; margin-bottom:8px">RSI neutral (${rsi.toFixed(0)}) – kein charttechnisches Extrem.</div>`;
 
-  if (ma50 > ma200) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">Golden Cross aktiv</strong> – MA50 (${ma50.toFixed(2)}) über MA200 (${ma200.toFixed(2)}). Klassisches Kaufsignal, langfristiger Aufwärtstrend.</div>`;
-  else interp += `<div style="padding:8px 12px; background:rgba(226,99,112,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--red)">Death Cross aktiv</strong> – MA50 (${ma50.toFixed(2)}) unter MA200 (${ma200.toFixed(2)}). Warnsignal, Abwärtstrend. Puts wahrscheinlich besser geeignet.</div>`;
+  if (ma50 > ma200) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">Golden Cross</strong> – MA50 (${ma50.toFixed(2)}) liegt über MA200 (${ma200.toFixed(2)}). In der klassischen Charttechnik gilt das als bullishes Trendsignal.</div>`;
+  else interp += `<div style="padding:8px 12px; background:rgba(226,99,112,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--red)">Death Cross</strong> – MA50 (${ma50.toFixed(2)}) liegt unter MA200 (${ma200.toFixed(2)}). Charttechnisch ein bärisches Trendsignal.</div>`;
 
-  if (positionInRange > 80) interp += `<div style="padding:8px 12px; background:rgba(226,99,112,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--red)">Nahe 52W-Hoch (${positionInRange.toFixed(0)}%)</strong> – Risk-Reward für Calls ungünstig. Auf Rücksetzer warten oder Put erwägen.</div>`;
-  else if (positionInRange < 20) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">Nahe 52W-Tief (${positionInRange.toFixed(0)}%)</strong> – Mögliche Bodenbildung. Interessante Einstiegszone für Calls.</div>`;
+  if (positionInRange > 80) interp += `<div style="padding:8px 12px; background:rgba(226,99,112,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--red)">Nahe 52W-Hoch (${positionInRange.toFixed(0)}%)</strong> – Der Kurs notiert im oberen Bereich seiner Jahresspanne. Das Chance-Risiko-Verhältnis auf der Long-Seite gilt charttechnisch als angespannt.</div>`;
+  else if (positionInRange < 20) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">Nahe 52W-Tief (${positionInRange.toFixed(0)}%)</strong> – Der Kurs notiert im unteren Bereich seiner Jahresspanne, ein in der Charttechnik oft beobachteter Bereich möglicher Bodenbildung.</div>`;
 
-  if (vola > 35) interp += `<div style="padding:8px 12px; background:rgba(255,204,0,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--yellow)">Hohe Volatilität (${vola.toFixed(0)}%)</strong> – Optionsscheine teuer! Spreads statt nackte Calls/Puts. Vol Crush Risiko beachten.</div>`;
-  else if (vola < 15) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">Niedrige Volatilität (${vola.toFixed(0)}%)</strong> – Optionsscheine günstig. Guter Zeitpunkt für Long Calls oder Puts.</div>`;
+  if (vola > 35) interp += `<div style="padding:8px 12px; background:rgba(255,204,0,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--yellow)">Hohe Volatilität (${vola.toFixed(0)}%)</strong> – Optionsscheine sind in diesem Umfeld tendenziell teuer bewertet. Strategien mit begrenztem Vega (z. B. Spreads) reagieren rechnerisch weniger empfindlich auf einen Volatilitätsrückgang.</div>`;
+  else if (vola < 15) interp += `<div style="padding:8px 12px; background:rgba(70,192,138,0.05); border-radius:8px; margin-bottom:8px"><strong style="color:var(--green)">Niedrige Volatilität (${vola.toFixed(0)}%)</strong> – Optionsscheine sind tendenziell günstiger bewertet als in volatilen Phasen.</div>`;
 
   interp += `<div style="margin-top:14px; padding:14px; background:linear-gradient(135deg, var(--s2), var(--s3)); border:1px solid var(--cyan); border-radius:10px">
-    <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:6px">EMPFEHLUNG</div>
+    <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:6px">CHARTTECHNISCHE EINORDNUNG</div>
     <div style="font-size:13px; line-height:1.7">
       ${overall === 'bull'
-        ? `Tendenz <strong style="color:var(--green)">BULLISH</strong> → Long Call oder Bull Call Spread. ${vola > 25 ? 'Wegen hoher Vola besser <strong>Bull Call Spread</strong> statt reiner Call.' : 'Vola niedrig, Long Call direkt möglich.'}`
+        ? `Die Signale ergeben in Summe ein <strong style="color:var(--green)">bullishes</strong> charttechnisches Bild. Zu einer solchen Lage passen aus Lehrbuch-Sicht typischerweise Strategie-Typen wie Long Call oder Bull Call Spread${vola > 25 ? '; bei hoher Volatilität reagiert ein Bull Call Spread rechnerisch weniger empfindlich auf einen Vola-Rückgang als ein einzelner Call.' : '.'}`
         : overall === 'bear'
-        ? `Tendenz <strong style="color:var(--red)">BEARISH</strong> → Long Put oder Bear Put Spread. ${vola > 25 ? 'Wegen hoher Vola besser <strong>Bear Put Spread</strong> – günstiger und vol-resistenter.' : 'Vola niedrig, Long Put direkt möglich.'}`
-        : `Tendenz <strong style="color:var(--yellow)">NEUTRAL</strong> → ${vola > 25 ? 'Hohe Vola: <strong>Iron Condor</strong> erwägen (kassiere Prämie bei Seitwärts).' : 'Niedrige Vola: <strong>Long Straddle</strong> interessant wenn du große Bewegung erwartest.'}`}
+        ? `Die Signale ergeben in Summe ein <strong style="color:var(--red)">bärisches</strong> charttechnisches Bild. Dazu passen aus Lehrbuch-Sicht typischerweise Strategie-Typen wie Long Put oder Bear Put Spread${vola > 25 ? '; bei hoher Volatilität ist ein Bear Put Spread rechnerisch vol-resistenter als ein einzelner Put.' : '.'}`
+        : `Die Signale ergeben in Summe ein <strong style="color:var(--yellow)">neutrales</strong> charttechnisches Bild. ${vola > 25 ? 'Bei hoher Volatilität werden in Seitwärtsphasen oft prämienorientierte Strategien wie der Iron Condor behandelt.' : 'Bei niedriger Volatilität wird häufig der Long Straddle als Beispiel für die Erwartung einer großen Bewegung herangezogen.'}`}
+    </div>
+    <div style="font-size:11px; color:var(--muted); line-height:1.6; margin-top:10px; padding-top:10px; border-top:1px solid var(--border)">
+      Automatische, rein charttechnische Einordnung zu Lern- und Informationszwecken – keine Anlageberatung und keine Kauf- oder Verkaufsempfehlung. Eigene Recherche und ggf. unabhängige Beratung bleiben erforderlich.
     </div>
   </div></div>`;
 
@@ -4801,6 +4842,39 @@ const padding = rangeC * 0.08;
     ctx.fillText(value.toFixed(2), padL - 10, y + 3);
   }
 
+  // ---- x-axis date labels ----
+  (function drawXAxisLabels(){
+    const n = closes.length;
+    if (n < 2) return;
+    const today = new Date();
+    const dateForIndex = (i) => {
+      const tradingDaysBack = (n - 1 - i);
+      const calDaysBack = Math.round(tradingDaysBack * 7 / 5);
+      const dt = new Date(today);
+      dt.setDate(dt.getDate() - calDaysBack);
+      return dt;
+    };
+    const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const fmtLabel = (dt) => {
+      if (assetChartRange === '1w' || assetChartRange === '1m')
+        return ('0'+dt.getDate()).slice(-2) + '.' + ('0'+(dt.getMonth()+1)).slice(-2) + '.';
+      if (assetChartRange === '3y' || assetChartRange === '5y' || assetChartRange === 'max')
+        return String(dt.getFullYear());
+      return months[dt.getMonth()] + " '" + String(dt.getFullYear()).slice(-2);
+    };
+    const ticks = 4;
+    ctx.fillStyle = '#69728a';
+    ctx.font = "9px 'IBM Plex Mono', monospace";
+    ctx.textBaseline = 'alphabetic';
+    for (let t = 0; t <= ticks; t++) {
+      const i = Math.round((t / ticks) * (n - 1));
+      const x = toX(i);
+      const label = fmtLabel(dateForIndex(i));
+      ctx.textAlign = t === 0 ? 'left' : (t === ticks ? 'right' : 'center');
+      ctx.fillText(label, x, H - padB + 17);
+    }
+  })();
+
   const first = closes[0];
   const last = closes[closes.length - 1];
   const perf = ((last / first - 1) * 100);
@@ -4912,13 +4986,7 @@ const padding = rangeC * 0.08;
   _pill(ctx, (positive ? '\u25B2 +' : '\u25BC ') + perf.toFixed(2) + '%', padL + 2, padT - 7,
     { fs: 11, weight: '700', color: lineColor, bg: _hexA(lineColor, 0.16), border: _hexA(lineColor, 0.45), align: 'left', minY: 2 });
 
-  // ---- x labels ----
-  ctx.fillStyle = '#8a93ad';
-  ctx.font = "9px 'IBM Plex Mono', monospace";
-  ctx.textAlign = 'left';
-  ctx.fillText('Start', padL, H - 8);
-  ctx.textAlign = 'right';
-  ctx.fillText('Heute', W - padR, H - 8);
+  // ---- x labels: siehe drawXAxisLabels weiter oben (Datumsachse) ----
 
   // ---- save state for crosshair + attach listener ----
   window._acState = { closes, padL, padR, padT, padB, chartW, chartH, W, H, minV, maxV, range, first, lineColor };
