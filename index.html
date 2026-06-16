@@ -2228,23 +2228,34 @@ function generateFakeCloses(start) {
 }
 
 async function loadAll() {
-  // Karten zeichnen und Live-Kurse über den funktionierenden /api/quote-smart-Proxy laden
-  // (der direkte stooq.com-Aufruf scheiterte im Browser an CORS und füllte Fake-Daten).
+  // Karten zeichnen; beim Start NICHT alle ~65 Werte laden – das Asset-Grid ist
+  // ausgeblendet und würde sonst unnötig das API-Kontingent verbrennen. Es werden nur
+  // die Watchlist-Werte vorgeladen. Das aktuell gewählte Asset und Suchtreffer werden
+  // bei Bedarf geladen (selectAsset bzw. die Suche).
   renderAssets();
   showEmptyAssetState();
 
-  await loadVisibleAssetQuotes(ASSETS);
+  const watch = (typeof getWatchlist === 'function') ? getWatchlist() : [];
+  const watchAssets = watch.map(tk =>
+    ASSETS.find(a => a.ticker === tk) || { ticker: tk, name: tk, cat: 'custom' }
+  );
+
+  if (watchAssets.length) {
+    await loadVisibleAssetQuotes(watchAssets);
+    renderWatchlistBar();
+  }
 
   const ok = Object.keys(quoteCache).length;
   const dot = document.getElementById('api-dot');
   const txt = document.getElementById('api-text');
-  if (ok > ASSETS.length / 2) {
+  if (watchAssets.length && ok >= watchAssets.length) {
     if (dot) dot.classList.add('ok');
-    if (txt) txt.textContent = ok + '/' + ASSETS.length + ' LIVE · MULTI SOURCE';
+    if (txt) txt.textContent = ok + ' WATCHLIST LIVE · MULTI SOURCE';
   } else if (ok > 0) {
-    if (txt) txt.textContent = ok + '/' + ASSETS.length + ' TEILS LIVE · MULTI SOURCE';
+    if (dot) dot.classList.add('ok');
+    if (txt) txt.textContent = ok + ' LIVE · MULTI SOURCE';
   } else {
-    if (dot) dot.classList.add('fail');
+    // Kein Fehler – beim Start ist (ohne Watchlist) schlicht nichts zu laden.
     if (txt) txt.textContent = 'LIVE DATA · MULTI SOURCE';
   }
 }
@@ -2278,7 +2289,12 @@ const sel = currentAsset?.ticker === a.ticker;
     </div>`;
   }).join('');
 
-  loadVisibleAssetQuotes(filtered);
+  // Kurse nur laden, wenn das Grid tatsächlich sichtbar ist (es ist standardmäßig
+  // per CSS ausgeblendet). Verhindert ~65 unnötige Quote-Requests pro renderAssets-Aufruf.
+  const grid = document.getElementById('asset-grid');
+  if (grid && grid.offsetParent !== null) {
+    loadVisibleAssetQuotes(filtered);
+  }
 }
 
 async function loadVisibleAssetQuotes(assets) {
