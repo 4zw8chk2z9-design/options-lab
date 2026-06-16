@@ -52,6 +52,11 @@ const CRYPTO_MAP = {
   "ETH-USD": "ETH-USD.CC"
 };
 
+// ---- Server-seitiger In-Memory-Cache (pro Function-Instanz) ----
+// History ändert sich nur einmal täglich -> 45 Min TTL schont das EODHD-Kontingent.
+const HISTORY_TTL_MS = 45 * 60 * 1000;
+const historyCache = new Map(); // requestedSymbol -> { ts, payload }
+
 function getDateString(daysAgo) {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
@@ -71,6 +76,42 @@ function toEodhdSymbol(symbol) {
   }
 
   return symbol;
+}
+
+// ---- Robuste externe Antwort-Verarbeitung ----
+// Liest den Body genau EINMAL als Text, prüft Status/Content-Type und
+// erkennt Rate-Limit-/Klartext-Antworten, BEVOR JSON.parse aufgerufen wird.
+async function safeFetchJson(url) {
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (e) {
+    return { ok: false, reason: "network_error", status: 0, snippet: String(e && e.message || e).slice(0, 160) };
+  }
+
+  const status = response.status;
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  const rawText = await response.text();
+
+  // Rate-Limit erkennen: HTTP 429 oder typische Klartext-Marker ("You exceeded...")
+  if (status === 429 || /you exceeded|rate limit|too many requests|limit reached|quota/i.test(rawText)) {
+    return { ok: false, reason: "rate_limited", status, snippet: rawText.slice(0, 160) };
+  }
+
+  if (!response.ok) {
+    return { ok: false, reason: "upstream_error", status, snippet: rawText.slice(0, 160) };
+  }
+
+  // Nicht-JSON-Antwort (z. B. HTML-Fehlerseite oder Klartext) sauber abfangen
+  if (contentType && !contentType.includes("json") && !contentType.includes("text/plain")) {
+    return { ok: false, reason: "non_json", status, snippet: rawText.slice(0, 160) };
+  }
+
+  try {
+    return { ok: true, data: JSON.parse(rawText), status };
+  } catch (parseError) {
+    return { ok: false, reason: "non_json", status, snippet: rawText.slice(0, 160) };
+  }
 }
 
 function calculateHistoricalVolatility(closes, days = 30) {
@@ -99,6 +140,18 @@ function calculateHistoricalVolatility(closes, days = 30) {
 }
 
 function normalizeHistory(rows, requestedSymbol, sourceSymbol, provider) {
+  // Defensive: nur Arrays sind gültige Kursreihen. Fehler-Objekte o. Ä. sauber abfangen.
+  if (!Array.isArray(rows)) {
+    return {
+      requestedSymbol,
+      sourceSymbol,
+      provider,
+      supported: false,
+      reason: "no_data",
+      error: "Provider returned no time series"
+    };
+  }
+
   const cleaned = rows
     .map(row => ({
       date: row.date,
@@ -123,6 +176,7 @@ function normalizeHistory(rows, requestedSymbol, sourceSymbol, provider) {
       sourceSymbol,
       provider,
       supported: false,
+      reason: "insufficient_data",
       error: "Not enough historical data",
       count: closes.length
     };
@@ -159,6 +213,13 @@ function normalizeHistory(rows, requestedSymbol, sourceSymbol, provider) {
 export default async function handler(req, res) {
   try {
     const requestedSymbol = req.query.symbol || "AAPL";
+
+    // 1. Cache-Treffer? -> Kontingent schonen
+    const cached = historyCache.get(requestedSymbol);
+    if (cached && (Date.now() - cached.ts) < HISTORY_TTL_MS) {
+      return res.status(200).json({ ...cached.payload, cached: true });
+    }
+
     const sourceSymbol = toEodhdSymbol(requestedSymbol);
 
     const from = getDateString(420);
@@ -168,25 +229,37 @@ export default async function handler(req, res) {
       `https://eodhd.com/api/eod/${encodeURIComponent(sourceSymbol)}` +
       `?api_token=${process.env.EODHD_API_KEY}&fmt=json&from=${from}&to=${to}`;
 
-    const response = await fetch(url);
-    const data = await response.json();
+    const fetched = await safeFetchJson(url);
 
-    const rawText = await response.text();
+    // 2. Externe Antwort abgesichert: Rate-Limit / Nicht-JSON sauber zurückgeben statt crashen
+    if (!fetched.ok) {
+      return res.status(200).json({
+        requestedSymbol,
+        sourceSymbol,
+        provider: "eodhd-history",
+        supported: false,
+        reason: fetched.reason,
+        error:
+          fetched.reason === "rate_limited"
+            ? "Provider rate limit / quota reached"
+            : "Provider returned no valid data",
+        details: fetched.snippet
+      });
+    }
 
-let data;
-try {
-  data = JSON.parse(rawText);
-} catch (parseError) {
-  return res.status(200).json({
-    supported: false,
-    error: "Provider returned non-JSON response",
-    details: rawText.slice(0, 160)
-  });
-}
-
-    return res.status(200).json(
-      normalizeHistory(data, requestedSymbol, sourceSymbol, "eodhd-history")
+    const payload = normalizeHistory(
+      fetched.data,
+      requestedSymbol,
+      sourceSymbol,
+      "eodhd-history"
     );
+
+    // 3. Nur valide Kursreihen cachen
+    if (payload.supported) {
+      historyCache.set(requestedSymbol, { ts: Date.now(), payload });
+    }
+
+    return res.status(200).json(payload);
   } catch (error) {
     return res.status(500).json({
       supported: false,
